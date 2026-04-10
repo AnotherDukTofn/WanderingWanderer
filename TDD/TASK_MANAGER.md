@@ -43,9 +43,9 @@ Tạo Unity project và folder structure theo đúng Naming Convention doc.
 
 **AC:**
 
-- [ ] `CombatConfig` SO tồn tại tại `Assets/Data/Config/CombatConfig.asset`
-- [ ] Có thể chỉnh `HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE`, `BASE_MP_RECOVERY`, `HP_CAP`, `HP_HALF`, `MP_COEFF` trực tiếp trong Inspector mà không cần code
-- [ ] Giá trị mặc định hợp lý được điền sẵn (xem Combat Design doc)
+- [x] `CombatConfig` SO tồn tại tại `Assets/Data/Config/CombatConfig.asset`
+- [x] Có thể chỉnh `HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE`, `BASE_MP_RECOVERY`, `HP_CAP`, `HP_HALF`, `MP_COEFF` trực tiếp trong Inspector mà không cần code
+- [x] Giá trị mặc định hợp lý được điền sẵn (xem Combat Design doc)
 
 ---
 

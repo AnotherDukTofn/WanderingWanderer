@@ -12,16 +12,16 @@ Dự án này sử dụng tiêu chuẩn **Conventional Commits** để viết co
 
 ## 2. Các loại Commit (Type)
 
-| Type | Mục đích sử dụng |
-| :--- | :--- |
-| `feat` | Thêm một tính năng mới của game. |
-| `fix` | Sửa lỗi bug (ví dụ lỗi logic, UI, lỗi không compile được). |
-| `docs` | Thay đổi hoặc bổ sung tài liệu (Markdown docs, GDD, TDD...). |
-| `style` | Cập nhật định dạng code (khoảng trắng, thụt lề, comment) - không ảnh hưởng đến logic. |
-| `refactor` | Chỉnh sửa, tái cấu trúc code nhưng **không** thêm tính năng cũng **không** sửa lỗi. |
-| `perf` | Cải thiện hiệu năng thuật toán, tối ưu bộ nhớ. |
-| `test` | Thêm unit/playmode test mới hoặc sửa các test hiện tại. |
-| `chore` | Các công việc thường ngày: cấu hình hệ thống build, cập nhật tool, sửa cấu hình project (ví dụ: cập nhật .gitignore, packages). |
+| Type       | Mục đích sử dụng                                                                                                                |
+| :--------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| `feat`     | Thêm một tính năng mới của game.                                                                                                |
+| `fix`      | Sửa lỗi bug (ví dụ lỗi logic, UI, lỗi không compile được).                                                                      |
+| `docs`     | Thay đổi hoặc bổ sung tài liệu (Markdown docs, GDD, TDD...).                                                                    |
+| `style`    | Cập nhật định dạng code (khoảng trắng, thụt lề, comment) - không ảnh hưởng đến logic.                                           |
+| `refactor` | Chỉnh sửa, tái cấu trúc code nhưng **không** thêm tính năng cũng **không** sửa lỗi.                                             |
+| `perf`     | Cải thiện hiệu năng thuật toán, tối ưu bộ nhớ.                                                                                  |
+| `test`     | Thêm unit/playmode test mới hoặc sửa các test hiện tại.                                                                         |
+| `chore`    | Các công việc thường ngày: cấu hình hệ thống build, cập nhật tool, sửa cấu hình project (ví dụ: cập nhật .gitignore, packages). |
 
 ## 3. Phạm vi (Scope) - Khuyến nghị
 
