@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reference Documents/RAW_GDD.md",
+                "file": "TDD/COMMIT_CONVENTION.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "RAW_GDD"
+              "title": "COMMIT_CONVENTION"
             }
           }
         ]
@@ -185,21 +185,29 @@
   },
   "active": "889e70a50c5c5148",
   "lastOpenFiles": [
-    "Wandering Wanderer - Project/Temp/ADB-Refreshdb96a056a01a4d252aedc8d9d9b305fb",
-    "Wandering Wanderer - Project/Temp/ADB-Refresh47013de25e414b8c3a896d06afc2ddee",
-    "TDD/TDD —  Architecture Overview.md",
-    "Reference Documents/RAW_GDD.md",
-    "Wandering Wanderer - Project/Temp/ADB-Refreshf6e38a6b0230d67119d24a284df0fbb2",
-    "Wandering Wanderer - Project/Temp/ADB-Refreshe65e7feb8b7386e33a947e11a5c8d280",
-    "Wandering Wanderer - Project/Temp/ADB-Refresh250c3e608ede3adc1b4361e3577228fa",
-    "Wandering Wanderer - Project/Temp/UnityTempFile-b38028582a227bc6fbb6736f0ddade43",
-    "Wandering Wanderer - Project/Library/Bee/TundraBuildState.state",
-    "Wandering Wanderer - Project/Library/Bee/artifacts/2400b0aE.dag/Assembly-CSharp.ref.dll",
-    "Wandering Wanderer - Project/Library/Bee/artifacts/2400b0aE.dag/Assembly-CSharp.pdb",
-    "Wandering Wanderer - Project/Library/Bee/artifacts/2400b0aE.dag/Assembly-CSharp.dll",
-    "Wandering Wanderer - Project/Library/Bee/buildprogram0.traceevents",
-    "GDD/GDD - Combat Design.md",
+    "TDD/TASK_MANAGER.md",
+    "TDD/COMMIT_CONVENTION.md",
+    "Wandering Wanderer - Project/Library/Artifacts/5c/5ce36c6da362661ef73b4671cf89d7ad",
+    "Wandering Wanderer - Project/Library/TempArtifacts/Extra/516b81b7ed5ee044e85c85cbcf1b2f3a.b.index",
+    "Wandering Wanderer - Project/Assets/Materials/Fonts.meta",
+    "Wandering Wanderer - Project/Assets/Materials/Fonts",
+    "TDD/NAMING_CONVENTION.md",
+    "Wandering Wanderer - Project/Library/Artifacts/82/82e8e42a9b8236ab764c17f252305cab",
+    "Wandering Wanderer - Project/Library/TempArtifacts/Extra/513157374a22383419bb50987b3d1465.b.index",
+    "Wandering Wanderer - Project/Assets/Prefabs/VFX.meta",
+    "Wandering Wanderer - Project/Temp/ADB-Refresh464280c52fd19d842b25b0da29bb69a5",
+    "Wandering Wanderer - Project/Assets/Prefabs/VFX",
+    "Wandering Wanderer - Project/Library/Artifacts/b4/b41df1d33bcca99f0b2158ee44be34e2",
+    "TDD/TESTING_GUIDE.md",
     "TDD/TDD - Detailed Architecture.md",
+    "[[.md",
+    "TDD/TDD —  Architecture Overview.md",
+    "GDD/GDD - Combat Design.md",
+    "GDD/GDD - Enemies.md",
+    "AGENTS.md",
+    "Architecture Feedback.md",
+    "CLAUDE.md",
+    "Reference Documents/RAW_GDD.md",
     "GDD/GDD - Progression Design.md",
     "GDD/GDD - Game Overview.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-system/nodes-note-package.md",
@@ -213,7 +221,6 @@
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/custom-events/vs-right-click-project.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/custom-c-nodes/vs-tasks-note-end.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/custom-c-nodes/vs-open-graph-w-node.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/custom-c-nodes/vs-ff-add-node.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Shared/EditorAssetResources/SplitButtonArrow.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/VariablesSaver@32x.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/VariablesAsset@32.png",
@@ -223,13 +230,6 @@
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/State@32x.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/SceneVariables.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/GlobalMessageListener@32x.png",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/FlowMachine@32x.png",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-with-graph-open-ff.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-visual-scripting-window.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-save-script.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-return-unity.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-regen-node-library.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-open-state-menu.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/vs-open-project-window.md"
+    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/FlowMachine@32x.png"
   ]
 }

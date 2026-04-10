@@ -1,37 +1,40 @@
-___
+___ 
 **Game:** Wandering Wanderer
 **Author:** DukTofn
-**Last Updated:** 05/04/2026
-**Figma:** [Game Architecture](https://www.figma.com/board/7RvpKSgyjrfYAY65Czb9mo/Wandering-Wanderer---Game-Architecture?node-id=0-1&p=f&t=Sw6bfNqnTEyAvYys-0)
+**Last Updated:** 09/04/2026
 ___
-
-# TDD — Architecture
 
 ## Mục lục
 
-1. [Tổng quan kiến trúc](#1-t%E1%BB%95ng-quan-ki%E1%BA%BFn-tr%C3%BAc)
-2. [Entry Point](#2-entry-point)
-3. [Map Layer](#3-map-layer)
-4. [Combat Layer](#4-combat-layer)
-5. [Entity Layer](#5-entity-layer)
-6. [Spell Layer](#6-spell-layer)
-7. [Passive Layer](#7-passive-layer)
-8. [Meta Layer](#8-meta-layer)
-9. [Data / Config Layer](#9-data--config-layer)
-10. [Luồng dữ liệu chính](#10-lu%E1%BB%93ng-d%E1%BB%AF-li%E1%BB%87u-ch%C3%ADnh)
-11. [Ghi chú triển khai](#11-ghi-ch%C3%BA-tri%E1%BB%83n-khai)
+1. [Tổng quan kiến trúc](TDD - Detailed Architecture#1. Tổng quan kiến trúc)
+2. [UI Layer][[TDD - Detailed Architecture#2. UI Layer]]
+3. [Entry Point][[TDD - Detailed Architecture#3. Entry Point]]
+4. [Map Layer][[#4. Map Layer]]
+5. [Combat Layer][[#5. Combat Layer]]
+6. [Presentation Layer][[#6. Presentation Layer]]
+7. [Entity Layer][[#7. Entity Layer]]
+8. [Spell Layer][[#8. Spell Layer]]
+9. [Passive Layer][[#9. Passive Layer]]
+10. [Meta Layer][[#10. Meta Layer]]
+11. [Data / Config Layer][[#11. Data / Config Layer]]
+12. [Luồng dữ liệu chính][[#12. Luồng dữ liệu chính]]
+13. [Ghi chú triển khai][[#13. Ghi chú triển khai]]
 
 ---
 
 ## 1. Tổng quan kiến trúc
 
-Game được chia thành **8 layer** theo trách nhiệm. Các layer cấp cao phụ thuộc vào layer cấp thấp hơn — không có dependency ngược chiều.
+Game được chia thành **10 layer** theo trách nhiệm. Các layer cấp cao phụ thuộc vào layer cấp thấp hơn — không có dependency ngược chiều.
 
 ```
+[UI Layer]  ← subscribe event từ mọi layer bên dưới, không bị ai phụ thuộc ngược lại
+    │
 [Entry Point]
     └── [Map Layer]
             ├── [Combat Layer]
+            │       ├── [Presentation Layer]
             │       ├── [Entity Layer]
+            │       │       └── [Enemy AI Subsystem]
             │       └── [Spell Layer]
             │               └── [Passive Layer]
             └── [Meta Layer]
@@ -39,15 +42,248 @@ Game được chia thành **8 layer** theo trách nhiệm. Các layer cấp cao 
 [Data / Config Layer]  ← được tham chiếu bởi mọi layer, không phụ thuộc vào ai
 ```
 
-Nguyên tắc thiết kế:
+**Nguyên tắc thiết kế:**
 
 - **ScriptableObject-driven config:** Mọi hằng số balancing đều nằm trong ScriptableObject, không hard-code trong logic.
+    
 - **Data tách khỏi behavior:** `EnemyDefinitions`, `SpellDefinitions`, `RuneDefinitions` là pure data — không chứa logic xử lý.
+    
 - **Effect là trung tâm combat:** Mọi tương tác giữa Spell, Rune, Equipment và Enemy đều đi qua `EffectSystem`.
+    
+- **Logic trước, Visual sau:** Combat Layer tính toán và đẩy Command vào `VisualQueue`. Presentation Layer tiêu thụ Queue — hai bên không block nhau trực tiếp.
+    
+- **CombatResolver làm mediator:** Mọi tương tác yêu cầu cả `EffectSystem` lẫn `DamageCalculator` đều đi qua `CombatResolver`, tránh circular dependency.
+    
+- **Enemy AI là data-driven:** `DecisionPolicy` được cấu hình trong `EnemyDefinition`, không hard-code theo từng enemy.
+    
+- **UI Layer nằm ngoài cùng:** UI subscribe event từ Logic Layer, không bao giờ bị Logic Layer phụ thuộc ngược lại. Logic không biết UI tồn tại.
+    
+- **Input không validate ở UI:** UI chỉ gọi API của Logic Layer và nhận `Result`. Mọi validation nằm trong Logic.
+    
 
 ---
 
-## 2. Entry Point
+## 2. UI Layer
+
+### Nguyên tắc
+
+**Observer pattern — một chiều:** Logic phát event, UI lắng nghe và tự cập nhật. Logic Layer (Combat, Map, Meta) không import, không reference, không gọi bất kỳ class UI nào. Đây là ranh giới cứng nhất trong toàn bộ architecture.
+
+**Input không validate ở UI:** Khi player tap Spell button, UI không tự kiểm tra MP hay cooldown. Nó gọi `SpellCaster.TryCast(spellId)` và nhận `CastResult`. UI chỉ phản hồi kết quả (animation thành công, shake animation nếu thất bại).
+
+**Unsubscribe bắt buộc:** Mọi View phải unsubscribe toàn bộ event khi bị destroy — tương tự quy tắc `IRunePassive.OnPurge()`. Dùng `OnDestroy()` trong Unity MonoBehaviour.
+
+---
+
+### `CastResult`
+
+Kiểu trả về của `SpellCaster.TryCast()` — UI dùng để quyết định phản hồi thế nào.
+
+```
+enum CastResult {
+    Success,
+    NotYourTurn,       // không phải Action Phase của Player
+    SpellOnCooldown,   // spell đang cooldown
+    NotEnoughMp,       // không đủ mana
+    SpellNotImprinted  // spell không có trong slot
+}
+```
+
+---
+
+### Events do Logic Layer phát
+
+Các C# event mà UI subscribe vào. Logic Layer phát, UI nhận — không chiều ngược lại.
+
+**`PlayerController` phát:**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnHpChanged`|HP thay đổi (damage, heal)|`(int current, int max)`|
+|`OnMpChanged`|MP thay đổi (cast, recovery)|`(int current, int max)`|
+|`OnArmorChanged`|Armor stack thay đổi|`(int totalArmor)`|
+
+**`EffectSystem` phát (per entity):**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnEffectApplied`|Buff/debuff được apply|`(EffectType)`|
+|`OnEffectRemoved`|Buff/debuff hết hạn hoặc bị giải|`(EffectType)`|
+
+**`TurnManager` phát:**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnPhaseChanged`|Chuyển phase|`(Phase, EntityType owner)`|
+|`OnCombatEnded`|Combat kết thúc|`(CombatResult: Win/Lose)`|
+
+**`CooldownTracker` phát:**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnCooldownChanged`|Cooldown của spell thay đổi|`(SpellID, int remaining)`|
+
+**`EnemyController` phát:**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnHpChanged`|Enemy HP thay đổi|`(int current, int max)`|
+|`OnArmorChanged`|Enemy Armor thay đổi|`(int totalArmor)`|
+|`OnDied`|Enemy HP về 0|—|
+
+**`GameManager` phát:**
+
+|Event|Khi nào|Tham số|
+|---|---|---|
+|`OnPendingModifierChanged`|`pendingCombatModifier` thay đổi|`(CombatModifier?)`|
+|`OnGoldChanged`|Gold thay đổi|`(int newBalance)`|
+
+---
+
+### Views theo Scene
+
+Architecture doc định nghĩa ranh giới trách nhiệm của từng View, không đi vào chi tiết widget. Chi tiết layout và visual là việc của UI Design doc riêng.
+
+#### CombatScene Views
+
+**`PlayerStatusView`**
+
+- Subscribe: `PlayerController.OnHpChanged`, `OnMpChanged`, `OnArmorChanged`
+- Hiển thị: HP bar, MP bar, Armor indicator
+- Không có input
+
+**`EnemyStatusView`** (một instance per enemy)
+
+- Subscribe: `EnemyController.OnHpChanged`, `OnArmorChanged`, `OnDied`
+- Hiển thị: HP bar, Armor indicator, intent (spell enemy sắp dùng — xem lưu ý bên dưới)
+- Không có input
+
+**`EffectView`** (một instance per entity)
+
+- Subscribe: `EffectSystem.OnEffectApplied`, `OnEffectRemoved`
+- Hiển thị: Danh sách icon buff/debuff đang active, duration còn lại
+
+**`SpellBarView`**
+
+- Subscribe: `CooldownTracker.OnCooldownChanged`, `TurnManager.OnPhaseChanged`
+- Hiển thị: Các spell đang imprint, cooldown overlay, disable khi không phải Action Phase của Player
+- Input: Player tap spell → gọi `SpellCaster.TryCast(spellId)` → nhận `CastResult` → phản hồi
+
+**`TurnIndicatorView`**
+
+- Subscribe: `TurnManager.OnPhaseChanged`
+- Hiển thị: Lượt của ai, phase nào đang active
+
+**`CombatLogView`** _(optional)_
+
+- Subscribe: nhiều event
+- Hiển thị: Text log các action trong combat ("Enemy cast Fireball — 45 damage")
+
+> **Enemy Intent:** Hiển thị spell enemy _sắp_ dùng là UX tốt cho turn-based game (xem: Slay the Spire). Điều này yêu cầu `EnemyController` expose `GetIntendedSpell(context)` sau khi `DecisionPolicy` đã chọn nhưng chưa thực thi. Cần thống nhất với GD xem có muốn feature này không trước khi implement.
+
+---
+
+#### MapView Views
+
+**`MapGraphView`**
+
+- Đọc: `MapSystem` graph (static sau khi sinh) + `GameManager.visitedNodes`
+- Hiển thị: Đồ thị Node, đường đã đi, các Node kề phía trước có thể chọn, icon loại Node
+- Input: Player tap Node → gọi `NodeRouter.EnterNode(nodeId)`
+
+**`PendingModifierView`**
+
+- Subscribe: `GameManager.OnPendingModifierChanged`
+- Hiển thị: Icon + tooltip khi `pendingCombatModifier != null`, ẩn khi null
+- Không có input
+
+**`PlayerInfoView`** (compact, góc màn hình)
+
+- Subscribe: `PlayerController.OnHpChanged`, `GoldLedger.OnBalanceChanged`
+- Hiển thị: HP hiện tại, Gold
+
+---
+
+#### ShopScene Views
+
+**`ShopInventoryView`**
+
+- Đọc: `ShopSystem.currentInventory` (static trong session)
+- Hiển thị: 15 item card chia 3 gian, giá, rank
+- Input: Player tap item → gọi `ShopSystem.TryPurchase(itemId)` → nhận `PurchaseResult`
+
+**`ShopServiceView`**
+
+- Hiển thị: Các dịch vụ (Enlighten, Embed, Purge, Socket), giá, điều kiện khả dụng
+- Input: Player chọn dịch vụ → gọi API tương ứng trên `ShopSystem`
+
+**`PlayerEquipmentView`** (hiển thị equipment + rune đang mang)
+
+- Subscribe: `EquipmentSystem`, `RuneSystem` khi có thay đổi
+- Hiển thị: 5 equipment slot, 4 rune socket, stat tổng hiện tại
+
+```
+enum PurchaseResult {
+    Success,
+    NotEnoughGold,
+    InventoryFull,      // không có slot equipment/rune tương ứng
+    ServiceUnavailable  // VD: Enlighten nhưng không đủ WIS
+}
+```
+
+---
+
+#### RewardScreen View
+
+**`RewardChoiceView`**
+
+- Đọc: `RewardSystem.currentOffer` (3 item)
+- Hiển thị: 3 card (Equipment / Spell / Rune), stat/effect của từng item
+- Input: Player tap 1 card → gọi `RewardSystem.SelectReward(index)` → về MapView
+
+---
+
+#### EventScene View
+
+**`EventView`**
+
+- Đọc: `EventSystem.currentEvent`
+- Hiển thị: Tên event, mô tả, các lựa chọn (nếu event có choice)
+- Input: Player xác nhận / chọn option → gọi `EventSystem.ResolveEvent(choice)`
+
+---
+
+#### RestScene View
+
+**`RestView`**
+
+- Hiển thị: Xác nhận hồi HP, danh sách 5 attribute để chọn +1
+- Input: Player chọn attribute → gọi `RestNode.ApplyRest(attributeType)` → về MapView
+
+---
+
+### Unsubscribe Pattern (bắt buộc)
+
+Mọi View MonoBehaviour phải unsubscribe trong `OnDestroy()`:
+
+```
+// Ví dụ PlayerStatusView
+void OnEnable() {
+    PlayerController.OnHpChanged += UpdateHpBar;
+    PlayerController.OnMpChanged += UpdateMpBar;
+}
+
+void OnDestroy() {
+    PlayerController.OnHpChanged -= UpdateHpBar;
+    PlayerController.OnMpChanged -= UpdateMpBar;
+}
+```
+
+Nếu không unsubscribe: View bị destroy nhưng delegate vẫn còn trong event list → `MissingReferenceException` hoặc memory leak, tùy Unity version.
+
+---
+
+## 3. Entry Point
 
 ### `GameManager`
 
@@ -73,15 +309,18 @@ Idle
 |---|---|
 |`currentArc`|Arc hiện tại (1, 2, 3)|
 |`playerSnapshot`|Toàn bộ trạng thái player (attributes, inventory, equipped items, runes)|
-|`gold`|Số vàng hiện có|
+|`gold`|Số vàng hiện có — chỉ modify qua `GoldLedger`|
 |`visitedNodes`|Tập các Node đã đi qua (để tránh quay lại)|
 |`pendingCombatModifier`|Modifier tạm thời từ Event (Force Trade, Fading Curse) — áp dụng cho trận tiếp theo|
 
-**Lưu ý:** `pendingCombatModifier` là nullable. Khi `CombatScene` khởi động, nó đọc giá trị này, áp dụng vào combat, rồi xóa đi sau khi trận kết thúc — tránh tạo persistent modifier system giữa các Node.
+**`pendingCombatModifier`:**
+
+- Nullable. Khi `CombatScene` khởi động, nó đọc giá trị này, áp dụng vào combat, rồi xóa sau khi trận kết thúc.
+- **UI requirement:** MapView phải hiển thị icon/tooltip khi `pendingCombatModifier != null` để player biết họ đang mang modifier vào trận tiếp theo. Đây là trách nhiệm của UI Layer — data đã có sẵn trong `GameManager`.
 
 ---
 
-## 3. Map Layer
+## 4. Map Layer
 
 ### `MapSystem`
 
@@ -120,23 +359,29 @@ player chọn Node
 
 ---
 
-## 4. Combat Layer
+## 5. Combat Layer
 
 ### `TurnManager`
 
-**Trách nhiệm:** Điều phối vòng lặp lượt giữa Player và Enemy. Đảm bảo thứ tự Phase được thực thi đúng.
+**Trách nhiệm:** Điều phối vòng lặp lượt giữa Player và Enemy. Chỉ chuyển Phase sau khi `VisualQueue` đã drain hết.
 
 **Vòng lặp:**
 
 ```
 Player Turn:
-  StartPhase(Player) → ActionPhase(Player) → EndPhase(Player)
+  StartPhase(Player) → [await VisualQueue]
+  → ActionPhase(Player) → [await VisualQueue]
+  → EndPhase(Player) → [await VisualQueue]
 
 Enemy Turn:
-  StartPhase(Enemy) → ActionPhase(Enemy) → EndPhase(Enemy)
+  StartPhase(Enemy) → [await VisualQueue]
+  → ActionPhase(Enemy) → [await VisualQueue]
+  → EndPhase(Enemy) → [await VisualQueue]
 
 → Lặp lại cho đến khi có bên HP = 0
 ```
+
+`[await VisualQueue]` là barrier đồng bộ: `TurnManager` dừng lại cho đến khi `VisualQueue` báo đã execute xong toàn bộ command đang pending. Điều này đảm bảo animation của Phase trước luôn hoàn thành trước khi Phase sau bắt đầu.
 
 **Điều kiện kết thúc combat:**
 
@@ -149,19 +394,19 @@ Sau khi kết thúc, `TurnManager` báo kết quả về `GameManager`.
 
 ### `PhaseHandler`
 
-**Trách nhiệm:** Thực thi từng Phase theo đúng resolve order đã định nghĩa trong GDD — Combat Design.
+**Trách nhiệm:** Thực thi từng Phase theo đúng resolve order. Mỗi bước tính logic xong → đẩy Command tương ứng vào `VisualQueue`.
 
 **Start Phase — resolve order:**
 
-|Thứ tự|Hành động|Lý do|
+|Thứ tự|Hành động|Visual Command đẩy vào Queue|
 |---|---|---|
-|1|MP Recovery|Hồi mana trước mọi thứ|
-|2|Frozen check|Nếu Frozen → set flag skip Action Phase, giải Frozen|
-|3|Crystalize check|Nếu Crystalize active → bật flag miễn nhiễm damage + debuff|
-|4|Regen|Hồi HP trước DoT|
-|5|Burn (DoT)|Gây damage. Bỏ qua nếu Crystalize flag đang bật|
-|6|Các status còn lại|Enrage, Drenched, Chilled, Dazed, Fortified, Energized...|
-|7|Combination check|Kiểm tra Overdrive / Detonates / Frozen / Crystalize trigger|
+|1|MP Recovery|`ShowMpGain(entity, amount)`|
+|2|Frozen check|Set flag skip Action Phase, giải Frozen|
+|3|Crystalize check|Bật flag miễn nhiễm damage + debuff|
+|4|Regen|Hồi HP|
+|5|Burn (DoT)|Gây damage qua `CombatResolver.ResolveBurn()`. Bỏ qua nếu Crystalize flag bật|
+|6|Các status còn lại|Enrage, Drenched, Chilled, Dazed, Fortified, Energized|
+|7|Combination check|`CombatResolver.CheckCombinations(entity)`|
 
 **End Phase — resolve order:**
 
@@ -175,113 +420,198 @@ Sau khi kết thúc, `TurnManager` báo kết quả về `GameManager`.
 
 ---
 
+### `CombatResolver`
+
+**Trách nhiệm:** Mediator giữa `EffectSystem` và `DamageCalculator`. Xử lý các tình huống yêu cầu cả hai hệ thống phối hợp, tránh circular dependency.
+
+**Lý do tồn tại:** `EffectSystem` không được phép gọi trực tiếp `DamageCalculator` — nếu vậy sẽ tạo vòng tròn `EffectSystem → DamageCalculator → EffectSystem` (khi damage trigger effect mới). `CombatResolver` đứng ngoài cả hai, subscribe event từ `EffectSystem` và điều phối `DamageCalculator`.
+
+**Detonates trigger:**
+
+```
+EffectSystem phát: OnCombinationTriggered(Detonates, target)
+  │
+  CombatResolver nhận
+  ├── damage = 30% × target.maxHp
+  ├── DamageCalculator.ApplyRawDamage(target, damage, ignoreResistance=true, ignoreArmor=true)
+  ├── VisualQueue.Enqueue: PlayDetonatesAnim(target), ShowDamageNumber(target, damage)
+  └── Không gọi lại EffectSystem (tránh loop)
+```
+
+**Burn DoT (gọi bởi PhaseHandler):**
+
+```
+CombatResolver.ResolveBurn(entity):
+  ├── damage = 10% × entity.maxHp
+  ├── Kiểm tra Crystalize flag → return nếu bật
+  ├── actual = DamageCalculator.ApplyWithResistance(entity, damage, fire_res)
+  └── Gọi DamageCalculator.ApplyToArmor(entity, actual)
+```
+
+**CheckCombinations:**
+
+```
+CombatResolver.CheckCombinations(entity):
+  ├── Đọc entity.EffectSystem.activeEffects (read-only)
+  ├── Enrage + Energized → EffectSystem.Apply(Overdrive)
+  ├── Refreshing + Fortified → EffectSystem.Apply(Crystalize)
+  ├── Burn + Dazed → trigger Detonates (xử lý ở trên)
+  └── Drenched + Chilled → EffectSystem.Apply(Frozen)
+```
+
+---
+
 ### `EffectSystem`
 
-**Trách nhiệm:** Quản lý toàn bộ buff và debuff trên một entity. Xử lý apply, giải trừ, neutralize, và kích hoạt combo.
+**Trách nhiệm:** Quản lý toàn bộ buff và debuff trên một entity. Không tự gọi `DamageCalculator` — mọi damage đi qua `CombatResolver`.
 
 **Cấu trúc nội bộ:**
 
 ```
 EffectSystem(entity) {
-    activeEffects: Dictionary<EffectType, EffectInstance>
+    activeEffects           : Dictionary<EffectType, EffectInstance>
+    OnEffectApplied         : event Action<EffectType>
+    OnEffectRemoved         : event Action<EffectType>
+    OnCombinationTriggered  : event Action<ComboType, entity>
 }
 ```
 
-Dùng `Dictionary` thay vì `List` để check combo và lookup hiệu quả O(1).
+**Logic tương tác nguyên tố khi apply Effect mới A:**
 
-**Khi apply một Effect mới:**
-
-1. Kiểm tra **element interaction** với các Effect đang active:
-    - Nếu Effect mới bị khắc bởi Effect cũ → Effect mới bị giải, Effect cũ giữ nguyên.
-    - Nếu Effect mới khắc Effect cũ → Effect cũ bị giải, apply Effect mới.
-    - Nếu cùng nguyên tố với Effect đang active → **Neutralize** cả hai.
-2. Apply Effect vào `activeEffects`.
-3. Gọi **Combination Check**:
-    - `Enrage` + `Energized` → trigger `Overdrive`
-    - `Refreshing` + `Fortified` → trigger `Crystalize`
-    - `Burn` + `Dazed` → trigger `Detonates`
-    - `Drenched` + `Chilled` → trigger `Frozen`
-
-**Bảng tương khắc nguyên tố:**
-
-```
-Nước > Lửa > Băng > Sét > Nước
-```
-
-|Effect cũ (B)|Effect mới (A)|Kết quả|
+|Tình huống|Điều kiện|Kết quả|
 |---|---|---|
-|B > A|—|A bị giải, B giữ nguyên|
-|A > B|—|B bị giải, A được apply|
-|A và B cùng nguyên tố|—|Cả hai bị Neutralize|
+|A khắc B đang active|A.element > B.element|B bị giải, A được apply|
+|B khắc A|B.element > A.element|A bị giải. Abort.|
+|Cùng nguyên tố, khác loại (Buff + Debuff)|A.element == B.element, A.type != B.type|**Neutralize** cả hai. Abort.|
+|Cùng nguyên tố, cùng loại (Buff + Buff hoặc Debuff + Debuff)|A.element == B.element, A.type == B.type|**Refresh** duration của B. Abort.|
 
-**Bảng các Effect và thuộc tính:**
+> **Ví dụ làm rõ:**
+> 
+> - Player có `Enrage` (Fire Buff), bị trúng Fire debuff `Burn` → cùng nguyên tố khác loại → **Neutralize**: mất cả hai.
+> - Enemy bị `Burn`, bị trúng Fire spell thêm lần nữa → cùng nguyên tố cùng loại → **Refresh**: Burn vẫn còn, reset duration.
+> - Player có `Enrage`, tự cast Fire spell lên bản thân → non-stackable, cùng loại → **Refresh**.
 
-|Effect|Loại|Stackable|Duration|Trigger|
+**Bảng Effect:**
+
+|Effect|Loại|On Same-type Collision|Duration|Trigger|
 |---|---|---|---|---|
-|Enrage|Buff|Non-self|∞|Dùng phép Lửa lên bản thân|
-|Refreshing|Buff|Non-self|∞|Dùng phép Nước lên bản thân|
-|Fortified|Buff|Non-self|∞|Dùng phép Băng lên bản thân|
-|Energized|Buff|Non-self|∞|Dùng phép Sét lên bản thân|
-|Overdrive|Buff|Non-self|This turn|Enrage + Energized|
-|Crystalize|Buff|Non-self|Next turn|Refreshing + Fortified|
+|Enrage|Buff|Refresh|∞|Dùng phép Lửa lên bản thân|
+|Refreshing|Buff|Refresh|∞|Dùng phép Nước lên bản thân|
+|Fortified|Buff|Refresh|∞|Dùng phép Băng lên bản thân|
+|Energized|Buff|Refresh|∞|Dùng phép Sét lên bản thân|
+|Overdrive|Buff|Refresh|This turn|Enrage + Energized|
+|Crystalize|Buff|Refresh|Next turn|Refreshing + Fortified|
 |Regen|Buff|Self-stackable|Depends|Spell / Item|
-|Burn|Debuff|Non-self|∞|Trúng phép Lửa|
-|Drenched|Debuff|Non-self|∞|Trúng phép Nước|
-|Chilled|Debuff|Non-self|∞|Trúng phép Băng|
-|Dazed|Debuff|Non-self|∞|Trúng phép Sét|
-|Detonates|Debuff|—|Instant|Burn + Dazed|
-|Frozen|Debuff|Non-self|Next turn|Drenched + Chilled|
+|Burn|Debuff|Refresh|∞|Trúng phép Lửa|
+|Drenched|Debuff|Refresh|∞|Trúng phép Nước|
+|Chilled|Debuff|Refresh|∞|Trúng phép Băng|
+|Dazed|Debuff|Refresh|∞|Trúng phép Sét|
+|Detonates|Instant|—|Instant|Burn + Dazed|
+|Frozen|Debuff|Refresh|Next turn|Drenched + Chilled|
 |Distracted|Debuff|Depends|Depends|Spell / Item|
 
 ---
 
 ### `DamageCalculator`
 
-**Trách nhiệm:** Tính toán và áp dụng sát thương cuối cùng lên target, sau khi đã xét Resistance và Armor.
+**Trách nhiệm:** Tính toán và áp dụng sát thương. Không biết đến `EffectSystem` — chỉ nhận số liệu thuần từ caller.
 
-**Pipeline xử lý một đòn tấn công:**
+**Pipeline đòn tấn công thông thường:**
 
 ```
-1. Tính raw_damage từ spell (base_value × potency)
-2. Tra nguyên tố đòn tấn công → lấy resistance tương ứng của target
-3. Áp dụng công thức giảm sát thương:
-       damage_reduction = R / (R + 90)
-       actual_damage    = raw_damage × (1 - damage_reduction)
-4. Kiểm tra Crystalize flag trên target:
-       nếu active → actual_damage = 0, bỏ qua bước tiếp theo
-5. Gọi ArmorStack.TakeDamage(actual_damage):
-       → damage đi qua chuỗi hurt_order từ cao xuống thấp
-       → phần tràn sang HP cuối cùng
+1. raw_damage = base_value × caster.GetEffectivePotency(element)
+2. R = target.GetEffectiveResistance(element)
+3. actual_damage = raw_damage × 90 / (R + 90)
+4. Nếu target.crystalizeFlag == true → actual_damage = 0
+5. overflow = ArmorStack.TakeDamage(actual_damage)
+6. target.currentHp -= overflow
 ```
 
-**Lưu ý — Detonates:** Gây 30% `max_hp` damage **không thể giảm bởi Resistance** và **bỏ qua Armor** (instant damage đặc biệt). `DamageCalculator` xử lý riêng trường hợp này bằng flag `ignoreResistance` và `ignoreArmor`.
+**ApplyRawDamage (dùng bởi CombatResolver cho Detonates):**
+
+```
+ApplyRawDamage(target, damage, ignoreResistance, ignoreArmor):
+    actual = ignoreResistance ? damage : damage × 90 / (R + 90)
+    if ignoreArmor:
+        target.currentHp -= actual
+    else:
+        overflow = ArmorStack.TakeDamage(actual)
+        target.currentHp -= overflow
+```
 
 ---
 
 ### `HitDodgeResolver`
 
-**Trách nhiệm:** Xác định đòn tấn công có trúng không, dựa trên AGI của hai bên.
+**Trách nhiệm:** Xác định đòn tấn công có trúng không.
 
 **Công thức:**
 
 ```
 hit_delta = AGI(attacker) - AGI(defender)
 
-if hit_delta >= HIT_THRESHOLD:
-    → guaranteed hit
-
+if hit_delta >= HIT_THRESHOLD → guaranteed hit
 else:
     dodge_chance = clamp(BASE_DODGE × (1 - hit_delta / HIT_THRESHOLD), 0, MAX_DODGE)
-    → roll random, nếu < dodge_chance thì miss
+    roll random → miss nếu < dodge_chance
 ```
 
-Các hằng số `HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE` đọc từ ScriptableObject.
-
-**Lưu ý Overdrive:** Khi entity có Overdrive active → `AGI = ∞` trong công thức, đảm bảo `hit_delta >= HIT_THRESHOLD` luôn đúng.
+Hằng số đọc từ `CombatConfig` ScriptableObject. Khi Overdrive active → AGI(attacker) = ∞, guaranteed hit.
 
 ---
 
-## 5. Entity Layer
+## 6. Presentation Layer
+
+**Trách nhiệm:** Nhận các `ActionCommand` từ Combat Layer và thực thi chúng tuần tự — animation, VFX, floating text, sound. Báo về `TurnManager` khi Queue đã drain.
+
+### `VisualQueue`
+
+```
+VisualQueue {
+    queue    : Queue<ActionCommand>
+    isPlaying: bool
+
+    Enqueue(command: ActionCommand)
+    OnQueueDrained: event Action    // TurnManager subscribe vào đây
+}
+```
+
+Hoạt động: Khi `isPlaying == false` và có command mới được Enqueue → tự động bắt đầu execute. Mỗi command chạy xong mới lấy command tiếp theo. Khi Queue rỗng → phát `OnQueueDrained`.
+
+### `ActionCommand`
+
+Interface mà mọi command visual phải implement:
+
+```
+interface ActionCommand {
+    Execute(): IEnumerator   // Unity Coroutine — chạy xong mới return
+}
+```
+
+**Các command hiện tại:**
+
+|Command|Mô tả|
+|---|---|
+|`PlaySpellAnim(caster, spell)`|Animation cast spell của caster|
+|`PlayDamageAnim(target)`|Target nhận đòn|
+|`ShowDamageNumber(target, amount)`|Floating text số damage|
+|`ShowHpGain(target, amount)`|Floating text hồi HP|
+|`ShowMpGain(target, amount)`|Floating text hồi MP|
+|`PlayEffectApplyAnim(target, effectType)`|VFX khi buff/debuff được apply|
+|`PlayEffectExpireAnim(target, effectType)`|VFX khi effect hết hạn|
+|`PlayBurnAnim(target)`|VFX Burn DoT|
+|`PlayFrozenThawAnim(target)`|Animation tan băng|
+|`PlayCrystalizeShieldAnim(target)`|VFX khiên Crystalize|
+|`PlayDetonatesAnim(target)`|VFX nổ Detonates|
+|`PlayDeathAnim(target)`|Animation chết|
+
+**Quan hệ với Combat Layer:**
+
+Combat Layer (PhaseHandler, SpellCaster, CombatResolver) không biết về animation hay timing. Nó chỉ gọi `VisualQueue.Enqueue(command)`. `TurnManager` await `OnQueueDrained` trước khi chuyển Phase.
+
+---
+
+## 7. Entity Layer
 
 ### `PlayerController`
 
@@ -293,13 +623,16 @@ Các hằng số `HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE` đọc từ Scriptab
 PlayerController {
     // Main Attributes (base + bonus từ equipment)
     POT, SPI, WIS, VIT, AGI : int
-    // Sub Attributes (tính từ main attributes + modifiers từ Rune/Equipment)
-    fire_potency, water_potency, ice_potency, lightning_potency : float
-    fire_res, water_res, ice_res, lightning_res                 : float
+
+    // Base Sub-Attributes — tính tĩnh từ main attributes + equipment/rune modifier
+    // Chỉ recalculate khi equip/unequip, KHÔNG recalculate trong combat
+    baseFirePotency, baseWaterPotency, baseIcePotency, baseLightningPotency : float
+    baseFireRes, baseWaterRes, baseIceRes, baseLightningRes                 : float
 
     // Resources
     currentHp, maxHp   : int
     currentMp, maxMp   : int
+    crystalizeFlag     : bool   // bật bởi PhaseHandler khi Crystalize active
 
     // Combat state
     effectSystem       : EffectSystem
@@ -310,7 +643,33 @@ PlayerController {
 }
 ```
 
-Sub attribute được tính lại mỗi khi có thay đổi equipment hoặc rune (không tính real-time trong combat để tránh overhead).
+**Dynamic getter — dùng khi cast hoặc tính damage:**
+
+```
+GetEffectivePotency(element: Element) → float:
+    base = baseXPotency tương ứng
+    multiplier = 1.0
+    if effectSystem.Has(Enrage):    multiplier += 0.15
+    if effectSystem.Has(Drenched):  multiplier -= 0.10
+    if effectSystem.Has(Overdrive): multiplier += 0.15
+    return base × multiplier
+
+GetEffectiveResistance(element: Element) → float:
+    base = baseXRes tương ứng
+    multiplier = 1.0
+    if effectSystem.Has(Fortified): multiplier += 0.15
+    if effectSystem.Has(Dazed):     multiplier -= 0.15
+    return base × multiplier
+
+GetEffectiveAGI() → float:
+    if effectSystem.Has(Overdrive): return ∞
+    base = AGI
+    if effectSystem.Has(Energized): base *= 1.30
+    if effectSystem.Has(Chilled):   base *= 0.70
+    return base
+```
+
+> Base sub-attribute tính tĩnh từ equipment/rune — không overhead trong combat. Dynamic getter chỉ đọc `effectSystem.activeEffects` (O(1) per lookup) và nhân thêm multiplier — chi phí cực thấp, hoàn toàn chấp nhận được.
 
 **Công thức HP:**
 
@@ -325,49 +684,184 @@ max_mp           = 10 × SPI
 turn_mp_recovery = BASE_MP_RECOVERY + SPI
 ```
 
+**RecalculateBaseAttributes():** Gọi khi equip/unequip item hoặc embed/purge rune. Tính lại toàn bộ `baseXPotency` và `baseXRes` từ Main Attributes + modifier của equipment + modifier của rune.
+
 ---
 
 ### `EnemyController`
 
-**Trách nhiệm:** Lưu trạng thái của một enemy instance trong combat và thực thi behavior pattern.
+**Trách nhiệm:** Lưu trạng thái runtime của một enemy instance và thực thi hành vi thông qua Enemy AI Subsystem.
 
 **Dữ liệu quản lý:**
 
 ```
 EnemyController {
-    // Định nghĩa từ EnemyDefinition (immutable trong combat)
-    maxHp              : int
-    fire_potency, water_potency, ice_potency, lightning_potency : float
-    fire_res, water_res, ice_res, lightning_res                 : float
-    spells             : Spell[]
-    behaviorPattern    : BehaviorPattern
+    // Từ EnemyDefinition (immutable)
+    maxHp                                                       : int
+    baseFirePotency, baseWaterPotency, baseIcePotency, baseLightningPotency : float
+    baseFireRes, baseWaterRes, baseIceRes, baseLightningRes     : float
 
-    // Trạng thái runtime (mutable)
-    currentHp          : int
-    effectSystem       : EffectSystem
-    armorStack         : ArmorStack
-    spellCooldowns     : Dictionary<SpellID, int>
+    // Runtime (mutable)
+    currentHp      : int
+    effectSystem   : EffectSystem
+    armorStack     : ArmorStack
+    spellCooldowns : Dictionary<SpellID, int>
+
+    // AI
+    spellSelector  : SpellSelector
+    decisionPolicy : DecisionPolicy
 }
 ```
 
-**Behavior Pattern** là interface tách biệt khỏi data — cho phép thêm pattern mới không cần sửa `EnemyDefinition`:
+Enemy cũng có `GetEffectivePotency()` và `GetEffectiveResistance()` với logic tương tự Player.
+
+---
+
+### Enemy AI Subsystem
+
+**Tổng quan:** Hai tầng tách biệt — `SpellSelector` lọc spell _có thể_ cast, `DecisionPolicy` quyết định _nên_ cast cái nào. Dữ liệu AI được cấu hình trong `EnemyDefinition`, không hard-code.
+
+#### `CombatContext`
+
+Snapshot read-only của combat state tại thời điểm enemy cần ra quyết định. Được tạo mới mỗi lần `TurnManager` bắt đầu Enemy Action Phase.
 
 ```
-interface BehaviorPattern {
-    Spell SelectNextSpell(EnemyController self, CombatContext context)
+CombatContext {
+    // Trạng thái player
+    playerHpPercent     : float    // currentHp / maxHp
+    playerMpPercent     : float
+    playerActiveEffects : EffectType[]  // read-only list
+
+    // Trạng thái enemy tự thân
+    selfHpPercent       : float
+    selfActiveEffects   : EffectType[]
+
+    // Thông tin spell
+    availableSpells     : SpellID[]    // sau khi SpellSelector lọc
+    spellCooldowns      : Dictionary<SpellID, int>
+
+    // Thông tin combat
+    roundNumber         : int
+}
+```
+
+#### `SpellSelector`
+
+**Trách nhiệm:** Lọc danh sách spell của enemy, trả về những spell _hợp lệ_ để cast trong lượt này.
+
+**Điều kiện lọc:**
+
+```
+SpellSelector.GetAvailableSpells(enemy, context) → SpellID[]:
+    return enemy.spells.Where(spell =>
+        spell.cooldown == 0
+    )
+```
+
+> Lưu ý: Enemy không có MP — không cần kiểm tra mana cost. Nếu thiết kế sau này thêm MP cho enemy thì bổ sung điều kiện này vào đây.
+
+#### `DecisionPolicy`
+
+Interface mà mọi AI policy phải implement:
+
+```
+interface DecisionPolicy {
+    SelectSpell(available: SpellID[], context: CombatContext) → SpellID
+}
+```
+
+**Các implementation:**
+
+**`RandomPolicy`** — Chọn ngẫu nhiên uniform từ danh sách available. Dùng cho Minion.
+
+```
+SelectSpell(available, context):
+    return available[Random(0, available.Length)]
+```
+
+**`WeightedRandomPolicy`** — Mỗi spell có weight riêng, roll theo xác suất. Dùng cho Elite đơn giản.
+
+```
+WeightedRandomPolicy {
+    weights: Dictionary<SpellID, float>  // cấu hình trong EnemyDefinition
 }
 
-// Các implementation:
-RandomPattern      → chọn ngẫu nhiên từ spell pool
-CyclePattern       → lần lượt theo thứ tự cố định
-PriorityPattern    → chọn spell có priority cao nhất thỏa điều kiện (HP threshold, debuff check...)
+SelectSpell(available, context):
+    filtered = available có trong weights
+    roll theo weights → return spell
 ```
+
+**`PriorityPolicy`** — Duyệt danh sách rule theo thứ tự ưu tiên, chọn rule đầu tiên thỏa điều kiện. Dùng cho Elite phức tạp và Boss.
+
+```
+PriorityPolicy {
+    rules: PriorityRule[]  // sorted by priority, cấu hình trong EnemyDefinition
+}
+
+PriorityRule {
+    spellId   : SpellID
+    condition : Condition   // xem bảng Condition bên dưới
+    priority  : int
+}
+
+SelectSpell(available, context):
+    for each rule in rules (theo priority giảm dần):
+        if rule.spellId in available AND rule.condition.Evaluate(context):
+            return rule.spellId
+    return available[Random]  // fallback nếu không có rule nào thỏa
+```
+
+**Bảng Condition khả dụng cho PriorityPolicy:**
+
+|Condition|Mô tả|Ví dụ dùng|
+|---|---|---|
+|`PlayerHpBelow(x%)`|Player HP < x%|Cast healing khi có thể exploit player yếu|
+|`PlayerHpAbove(x%)`|Player HP > x%|Cast debuff setup khi player còn nhiều máu|
+|`PlayerHas(effect)`|Player đang có effect X|Cast Dazed khi player đang bị Burn để trigger Detonates|
+|`PlayerLacks(effect)`|Player không có effect X|Không cast Burn nếu player đã bị Burn|
+|`SelfHpBelow(x%)`|Self HP < x%|Cast defensive spell khi HP thấp|
+|`SelfHas(effect)`|Self đang có effect X|Không dùng nếu đang bị Drenched|
+|`RoundNumberIs(n)`|Round == n|Boss phase trigger ở round cụ thể|
+|`RoundNumberAbove(n)`|Round > n|Boss enrage sau round n|
+|`Always`|Luôn đúng|Fallback priority thấp nhất|
+
+**Ví dụ cấu hình PriorityPolicy cho một Elite Fire/Lightning:**
+
+```
+rules:
+  [priority=10] SpellID=Lightning_Shock,  condition=PlayerHas(Burn)
+    // Cố ý trigger Detonates khi player đang bị Burn
+  [priority=5]  SpellID=Fire_Fireball,    condition=PlayerLacks(Burn)
+    // Apply Burn nếu player chưa bị
+  [priority=1]  SpellID=Lightning_Shock,  condition=Always
+    // Fallback
+```
+
+**`ScriptedPolicy`** — Thực thi chuỗi spell theo thứ tự cố định, không quan tâm context. Dùng cho Boss có pattern muốn GD kiểm soát hoàn toàn.
+
+```
+ScriptedPolicy {
+    sequence: SpellID[]  // cấu hình trong EnemyDefinition
+    currentIndex: int    // runtime, reset khi combat bắt đầu
+}
+
+SelectSpell(available, context):
+    // Tìm spell tiếp theo trong sequence còn available (chưa cooldown)
+    for i in range(sequence.Length):
+        idx = (currentIndex + i) % sequence.Length
+        if sequence[idx] in available:
+            currentIndex = (idx + 1) % sequence.Length
+            return sequence[idx]
+    return available[Random]  // fallback
+```
+
+> **Lưu ý thiết kế:** `DecisionPolicy` không đảm bảo tối ưu combat — nó chỉ cung cấp hành vi _có vẻ hợp lý_ theo ý GD. Việc enemy có "thông minh" hay không phụ thuộc vào cách GD cấu hình rule trong `EnemyDefinition`. Đây là điểm cần đồng bộ với **GDD — Enemies** (hiện đang [TBD]).
 
 ---
 
 ### `ArmorStack`
 
-**Trách nhiệm:** Quản lý chuỗi Armor stack theo `hurt_order`, xử lý damage tràn giữa các stack.
+**Trách nhiệm:** Quản lý chuỗi Armor stack theo `hurt_order`, xử lý damage tràn.
 
 **Cấu trúc:**
 
@@ -377,115 +871,114 @@ ArmorStack {
 }
 
 ArmorStackInstance {
-    value      : int   // HP còn lại của stack
-    duration   : int   // Lượt còn lại
+    value      : int
+    duration   : int
     hurt_order : int
 }
 ```
 
-**Khi nhận damage:**
+**TakeDamage:**
 
 ```
-TakeDamage(damage):
+TakeDamage(damage) → overflow:
     remaining = damage
-    for each stack in stacks (từ hurt_order cao nhất):
-        if remaining <= 0: break
+    for each stack (hurt_order cao → thấp):
         absorbed = min(stack.value, remaining)
         stack.value -= absorbed
         remaining -= absorbed
         if stack.value == 0: remove stack
-    return remaining  // phần damage tràn sang HP thật
+    return remaining  // overflow sang HP thật
 ```
 
-**Khi apply Armor mới:**
+**ApplyArmor:**
 
 ```
 ApplyArmor(value, duration):
-    newOrder = (stacks.MaxKey ?? 0) + 1
-    stacks.Add(newOrder, new ArmorStackInstance(value, duration, newOrder))
+    newOrder = stacks.MaxKey + 1 (hoặc 1 nếu trống)
+    stacks.Add(newOrder, ArmorStackInstance(value, duration, newOrder))
 ```
 
-**End Phase tick:**
+**End Phase Tick:**
 
 ```
 Tick():
-    for each stack: stack.duration -= 1
-    remove all stacks where duration == 0
+    foreach stack: stack.duration -= 1
+    remove stacks where duration == 0
 ```
 
 ---
 
-## 6. Spell Layer
+## 8. Spell Layer
 
 ### `SpellCaster`
 
-**Trách nhiệm:** Điều phối toàn bộ quá trình cast một Spell — từ validation MP/cooldown đến thực thi effect.
+**Trách nhiệm:** Điều phối toàn bộ quá trình cast một Spell — validate, resolve, thực thi, đẩy visual command.
 
-**Pipeline cast một Spell:**
+**Pipeline cast Spell (Player):**
 
 ```
-1. Kiểm tra spell có trong SpellSlot không
-2. Kiểm tra cooldown == 0
-3. Tính mana_cost (base_cost × Distracted modifier nếu đang bị)
-4. Kiểm tra currentMp >= mana_cost
-5. Xác định target(s)
-6. Gọi HitDodgeResolver → nếu miss thì dừng
-7. Thực thi effect của spell:
-       a. DamageCalculator nếu spell gây damage
-       b. EffectSystem.Apply() nếu spell apply buff/debuff
-       c. Heal / Armor apply trực tiếp lên PlayerController
-8. Trừ MP
-9. Set cooldown = spell.baseCooldown
-10. Notify UI
+1. SpellSlotManager.IsImprinted(spell) → abort nếu false
+2. CooldownTracker.GetCooldown(spell) == 0 → abort nếu còn CD
+3. cost = spell.baseCost × DistractedMultiplier(player.effectSystem)
+4. player.currentMp >= cost → abort nếu không đủ
+5. HitDodgeResolver.Resolve(player.GetEffectiveAGI(), enemy.GetEffectiveAGI())
+   → Miss: abort. VisualQueue.Enqueue(PlayMissAnim)
+6. VisualQueue.Enqueue(PlaySpellAnim(player, spell))
+7. Thực thi effects của spell:
+   a. Nếu có damage → DamageCalculator → VisualQueue.Enqueue(ShowDamageNumber)
+   b. Nếu apply effect → EffectSystem.Apply() → CombatResolver.CheckCombinations()
+   c. Nếu heal → player.currentHp += → VisualQueue.Enqueue(ShowHpGain)
+   d. Nếu apply Armor → ArmorStack.ApplyArmor() → VisualQueue.Enqueue(PlayArmorAnim)
+8. player.currentMp -= cost
+9. CooldownTracker.Set(spell, spell.baseCooldown)
+```
+
+**Pipeline cast Spell (Enemy):**
+
+```
+1. SpellSelector.GetAvailableSpells(enemy, context)
+2. DecisionPolicy.SelectSpell(available, context) → spellId
+3. Thực thi spell (tương tự Player từ bước 5 trở đi, nhưng không có hit/dodge với single player)
+4. CooldownTracker.Set(spell, spell.baseCooldown)
 ```
 
 ---
 
 ### `SpellSlotManager`
 
-**Trách nhiệm:** Quản lý số Spell Slot khả dụng và danh sách spell đang được imprint.
-
-**Quy tắc:**
-
-- Số slot mở khóa phụ thuộc vào `WIS` của player (tối đa 5 slot khi max WIS).
-- Một Spell chỉ có thể được cast khi đang ở trong một slot đã mở.
-- `Imprint` và `Forget` chỉ thực hiện được ngoài combat.
-
-**Cấu trúc:**
+**Trách nhiệm:** Quản lý số Spell Slot và danh sách spell đang imprint.
 
 ```
 SpellSlotManager {
-    slots: SpellSlot[5]  // max 5 slots
-    openSlots: int       // số slot đang mở khóa
+    slots    : SpellSlot[5]
+    openSlots: int            // đọc từ WisdomSlotConfig dựa trên player.WIS
 }
 
 SpellSlot {
-    isUnlocked    : bool
-    imprinted     : Spell?  // null nếu trống
+    isUnlocked : bool
+    imprinted  : Spell?
 }
 ```
 
-Logic WIS threshold cho từng slot nằm trong `WisdomSlotConfig` ScriptableObject.
+`Imprint` / `Forget` chỉ thực hiện ngoài combat. Số slot mở dựa trên WIS threshold trong `WisdomSlotConfig` ScriptableObject.
 
 ---
 
 ### `CooldownTracker`
 
-**Trách nhiệm:** Theo dõi cooldown của tất cả spell đang trong slot.
+**Trách nhiệm:** Theo dõi cooldown của spell đang trong slot (Player) hoặc spell pool (Enemy).
 
-**Hoạt động:**
-
-- Khi `SpellCaster` thực thi Spell thành công → set `cooldown[spellId] = spell.baseCooldown`.
-- Trong End Phase → `TurnManager` gọi `CooldownTracker.Tick()` → giảm tất cả cooldown đang > 0 xuống 1.
-- `SpellCaster` check `cooldown[spellId] == 0` trước khi cho phép cast.
+- Khi spell được cast thành công → `Set(spellId, baseCooldown)`.
+- End Phase → `Tick()` giảm tất cả cooldown > 0 xuống 1.
+- `SpellCaster` / `SpellSelector` check `GetCooldown(spellId) == 0` trước khi cho phép cast.
 
 ---
 
-## 7. Passive Layer
+## 9. Passive Layer
 
 ### `EquipmentSystem`
 
-**Trách nhiệm:** Quản lý 5 equipment slot, tính tổng stat bonus từ tất cả equipment đang equipped, inject vào `PlayerController`.
+**Trách nhiệm:** Quản lý 5 equipment slot, cung cấp tổng stat modifier cho `PlayerController.RecalculateBaseAttributes()`.
 
 **5 slot:**
 
@@ -497,218 +990,154 @@ Logic WIS threshold cho từng slot nằm trong `WisdomSlotConfig` ScriptableObj
 |Garb Slot|Garb|VIT|
 |Boot Slot|Boots|AGI|
 
-**Khi equip / unequip bất kỳ item nào:**
-
-1. Recalculate tổng stat bonus từ tất cả equipment.
-2. Gọi `PlayerController.RecalculateSubAttributes()` để cập nhật lại potencies và resistances.
-
-**Rank và stat cung cấp:**
-
-|Rank|Số stat cung cấp|
-|---|---|
-|Rank I|1 stat|
-|Rank II|2 stat (hoặc ít hơn với giá trị cao hơn)|
-|Rank III|3 stat (hoặc ít hơn với giá trị cao hơn)|
+Khi equip/unequip → gọi `PlayerController.RecalculateBaseAttributes()`.
 
 ---
 
 ### `RuneSystem`
 
-**Trách nhiệm:** Quản lý Rune Socket và các passive effect của Rune đang embedded. Một số Rune hook vào `EffectSystem` để trigger passive theo điều kiện.
+**Trách nhiệm:** Quản lý Rune Socket và lifecycle của passive Rune. Đảm bảo không memory leak khi Purge.
 
-**Socket:**
+**Socket:** 0 mặc định, tối đa 4, mở tại Magic Shop. `Embed`/`Purge` chỉ tại Magic Shop.
 
-- Người chơi bắt đầu với 0 Socket. Mở thêm tại Magic Shop (tối đa 4).
-- Mỗi Socket chứa tối đa 1 Rune.
-- `Embed` / `Purge` chỉ thực hiện được tại Magic Shop.
+**`IRunePassive` interface — bắt buộc với mọi Rune:**
 
-**Phân loại passive theo cách hoạt động:**
+```
+interface IRunePassive {
+    OnEmbed(player: PlayerController): void
+        // Đăng ký hook vào EffectSystem / TurnManager / PlayerController
 
-|Loại passive|Cách implement|
-|---|---|
-|Stat modifier đơn giản (VD: +10% fire_potency)|Inject trực tiếp vào `PlayerController.RecalculateSubAttributes()`|
-|Trigger theo điều kiện combat (VD: Khi bị Burn, hồi 5% HP)|Đăng ký callback vào `EffectSystem` event|
-|Modifier theo lượt (VD: Spell đầu tiên mỗi lượt miễn phí)|Hook vào `TurnManager` Start Phase|
+    OnPurge(player: PlayerController): void
+        // Gỡ toàn bộ hook đã đăng ký — bắt buộc để tránh memory leak
+}
+```
 
-Rune Rank III thường ảnh hưởng đến nhiều cơ chế đồng thời → có thể đăng ký nhiều hook cùng lúc.
+**Phân loại passive theo cơ chế:**
+
+|Loại|Implement trong|Ví dụ|
+|---|---|---|
+|Stat modifier đơn giản|`PlayerController.RecalculateBaseAttributes()`|+10% fire_potency|
+|Trigger theo combat event|Subscribe `EffectSystem.OnEffectApplied` trong `OnEmbed`, unsubscribe trong `OnPurge`|Khi bị Burn, hồi 5% HP|
+|Modifier theo lượt|Subscribe `TurnManager.OnStartPhase` trong `OnEmbed`, unsubscribe trong `OnPurge`|Spell đầu tiên mỗi lượt cost -1 MP|
 
 ---
 
-## 8. Meta Layer
+## 10. Meta Layer
 
 ### `ShopSystem`
 
-**Trách nhiệm:** Sinh inventory ngẫu nhiên cho Magic Shop và xử lý các giao dịch mua bán, dịch vụ.
+**Trách nhiệm:** Sinh inventory ngẫu nhiên và xử lý giao dịch tại Magic Shop.
 
 **Inventory mỗi lần vào Shop:**
 
 ```
 ShopInventory {
-    equipmentSection : Equipment[5]   // 5 equipment ngẫu nhiên
-    spellSection     : Spell[5]       // 5 spell ngẫu nhiên
-    runeSection      : Rune[5]        // 5 rune ngẫu nhiên
+    equipmentSection : Equipment[5]
+    spellSection     : Spell[5]
+    runeSection      : Rune[5]
 }
 ```
 
-Tỷ lệ Rank khi sinh item phụ thuộc vào Arc hiện tại — đọc từ ScriptableObject (Arc 1 ít Rank III, Arc 3 nhiều Rank III).
+Tỷ lệ Rank phụ thuộc Arc hiện tại — đọc từ `ArcConfig` ScriptableObject.
 
 **Các dịch vụ:**
 
 |Dịch vụ|Điều kiện|Tác động|
 |---|---|---|
-|Enlighten|Đủ WIS threshold cho slot tiếp theo|Mở thêm 1 Spell Slot|
-|Embed|Có Rune + Socket trống|Gắn Rune vào Socket|
-|Purge|Có Rune đang embedded|Tháo Rune khỏi Socket|
-|Rune Socket|Chưa đạt max 4 Socket|Mở thêm 1 Socket (giá tăng lũy tiến)|
-
-Giá cố định theo Rank — đọc từ `ShopPriceConfig` ScriptableObject.
+|Enlighten|Đủ WIS threshold|Mở thêm 1 Spell Slot|
+|Embed|Có Rune + Socket trống|Gắn Rune: gọi `IRunePassive.OnEmbed()`|
+|Purge|Có Rune embedded|Tháo Rune: gọi `IRunePassive.OnPurge()` trước|
+|Rune Socket|< 4 Socket|Mở thêm 1 Socket, giá tăng lũy tiến|
 
 ---
 
 ### `RewardSystem`
 
-**Trách nhiệm:** Sau khi player thắng combat, offer 1 Equipment + 1 Spell + 1 Rune để player chọn 1.
-
-**Pipeline:**
+**Trách nhiệm:** Offer 1 Equipment + 1 Spell + 1 Rune sau combat thắng, player chọn 1.
 
 ```
-1. Xác định loại combat (Minion / Elite / Boss Optional / Boss Bắt buộc)
-2. Xác định Arc hiện tại
-3. Lấy bảng tỷ lệ Rank tương ứng từ RewardRateConfig ScriptableObject
-4. Roll Rank cho từng loại item (Equipment, Spell, Rune) độc lập
-5. Sample ngẫu nhiên 1 item của đúng Rank từ pool tương ứng
-6. Hiển thị 3 lựa chọn cho player
-7. Áp dụng item được chọn vào inventory
+1. Xác định combatType và currentArc
+2. Lấy bảng tỷ lệ từ RewardRateConfig ScriptableObject
+3. Roll Rank cho từng loại item độc lập
+4. Sample 1 item của đúng Rank từ pool
+5. Hiển thị 3 lựa chọn → player chọn → áp vào inventory
 ```
-
-**Tỷ lệ Rank reward:**
-
-_Minion & Elite:_
-
-|Rank|Arc 1|Arc 2|Arc 3|
-|---|---|---|---|
-|Rank I|55%|40%|25%|
-|Rank II|35%|40%|40%|
-|Rank III|10%|20%|35%|
-
-_Boss Node:_
-
-|Rank|Arc 1|Arc 2|Arc 3|
-|---|---|---|---|
-|Rank I|20%|10%|0%|
-|Rank II|50%|40%|30%|
-|Rank III|30%|50%|70%|
 
 ---
 
 ### `EventSystem`
 
-**Trách nhiệm:** Chọn ngẫu nhiên Event từ pool khi player vào Event Node và thực thi kết quả.
+**Trách nhiệm:** Chọn ngẫu nhiên Event từ pool khi vào Event Node.
 
-**Quy tắc lấy Event:**
-
-- Mỗi Arc dùng một **shuffled queue** riêng từ pool — đảm bảo không lặp trong cùng Arc (nếu đủ Event trong pool).
-- Queue được shuffle lại ở đầu mỗi Arc mới.
-
-**Phân loại Event:**
-
-|Ký hiệu|Loại|Tỷ lệ khuyến nghị|
-|---|---|---|
-|(+)|Tích cực|~50%|
-|(=)|Đánh đổi|~30%|
-|(−)|Tiêu cực|~20%|
-
-**Xử lý Event ảnh hưởng combat** (`Force Trade`, `Fading Curse`): Ghi modifier vào `GameManager.pendingCombatModifier`. Khi combat bắt đầu, `PlayerController` đọc và áp modifier này. Sau khi combat kết thúc, `pendingCombatModifier` được xóa.
-
-**Event pool hiện tại (10 Event):**
-
-|Event|Loại|Mô tả|
-|---|---|---|
-|Windfall|(+)|Nhận Gold ngẫu nhiên|
-|Ancient Shrine|(+)|+1 Main Attribute tùy chọn|
-|Wandering Merchant|(+)|Mini-shop 3 item, giá giảm 25%|
-|Hidden Cache|(+)|Nhận miễn phí 1 Rune ngẫu nhiên|
-|Cursed Altar|(=)|Mất % HP hiện tại để nhận +3 Attribute|
-|Lost Devil|(=)|Chiến với Elite, nếu thắng offer Spell Rank III|
-|Force Trade|(=)|Trận tiếp theo: all_res -15%, all_potencies +15%|
-|Ambush|(−)|Chiến với Minion ngay, không nhận reward nếu thắng|
-|Fading Curse|(−)|Trận tiếp theo: all_res -10%|
-|Thief Gang|(−)|Mất 25% Gold hiện có|
+- Mỗi Arc dùng shuffled queue riêng — không lặp Event trong Arc nếu pool đủ.
+- Queue shuffle lại đầu Arc mới.
+- Event combat modifier (`Force Trade`, `Fading Curse`) → ghi vào `GameManager.pendingCombatModifier`.
 
 ---
 
 ### `RestNode`
 
-**Trách nhiệm:** Xử lý logic khi player chọn Rest Node.
+Khi player chọn Rest Node:
 
-**Hiệu ứng:**
-
-1. Hồi toàn bộ HP (`currentHp = maxHp`).
-2. Cho phép player chọn +1 điểm vào một Main Attribute tùy ý.
-3. Sau khi chọn, gọi `PlayerController.RecalculateSubAttributes()`.
+1. `player.currentHp = player.maxHp`
+2. Player chọn +1 điểm vào Main Attribute tùy ý
+3. `PlayerController.RecalculateBaseAttributes()`
 
 ---
 
 ### `GoldLedger`
 
-**Trách nhiệm:** Quản lý số Gold của player trong một run — cung cấp API thu/chi thống nhất.
-
 ```
 GoldLedger {
     balance: int
-
     Earn(amount: int)
-    Spend(amount: int) → bool    // trả false nếu không đủ tiền
+    Spend(amount: int) → bool
     CanAfford(amount: int) → bool
 }
 ```
 
-Tất cả giao dịch (`ShopSystem`, `RewardSystem`, `EventSystem`) đều đi qua `GoldLedger` — không ai trực tiếp modify `GameManager.gold`.
+Tất cả giao dịch đều đi qua `GoldLedger` — không có gì trực tiếp modify `GameManager.gold`.
 
 ---
 
-## 9. Data / Config Layer
+## 11. Data / Config Layer
 
 ### `ScriptableObjects`
-
-Toàn bộ hằng số balancing được tách ra thành ScriptableObject riêng biệt, nhóm theo chủ đề:
 
 |ScriptableObject|Nội dung|
 |---|---|
 |`CombatConfig`|`HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE`, `BASE_MP_RECOVERY`, `HP_CAP`, `HP_HALF`, `MP_COEFF`|
-|`ArcConfig[3]`|Tổng Node, tỷ lệ từng loại Node, tỷ lệ Rank item trong Shop, Gold reward theo loại combat|
+|`ArcConfig[3]`|Tổng Node, tỷ lệ từng loại Node, tỷ lệ Rank item trong Shop, Gold reward|
 |`ShopPriceConfig`|Giá theo Rank, giá dịch vụ Enlighten/Embed/Purge, giá Socket lũy tiến|
-|`RewardRateConfig`|Bảng tỷ lệ Rank reward theo loại combat × Arc|
-|`EventConfig`|Tỷ lệ từng Event, giá trị cụ thể (Gold Windfall range, HP% Cursed Altar...)|
+|`RewardRateConfig`|Bảng tỷ lệ Rank reward theo combatType × Arc|
+|`EventConfig`|Tỷ lệ từng Event, giá trị cụ thể từng Event|
 |`WisdomSlotConfig`|WIS threshold để mở từng Spell Slot|
 
 ---
 
 ### `EnemyDefinitions`
 
-Pool tất cả enemy trong game. Mỗi entry là pure data:
-
 ```
 EnemyDefinition {
-    id                 : string
-    displayName        : string
-    enemyType          : Minion | Elite | Boss
-    maxHp              : int
-    fire_potency, water_potency, ice_potency, lightning_potency : float
-    fire_res, water_res, ice_res, lightning_res                 : float
-    spells             : SpellID[]
-    behaviorPatternType: BehaviorPatternType   // Random | Cycle | Priority
-    behaviorConfig     : object               // tham số riêng của từng pattern
+    id                  : string
+    displayName         : string
+    enemyType           : Minion | Elite | Boss
+    maxHp               : int
+    baseFirePotency, baseWaterPotency, baseIcePotency, baseLightningPotency : float
+    baseFireRes, baseWaterRes, baseIceRes, baseLightningRes                 : float
+    spells              : SpellID[]
+    decisionPolicyType  : Random | WeightedRandom | Priority | Scripted
+    decisionPolicyConfig: object   // tham số tùy theo policy type
 }
 ```
 
-`EnemyController` nhận `EnemyDefinition` khi được khởi tạo, tạo instance runtime từ đó.
+`EnemyController` nhận `EnemyDefinition` khi khởi tạo, tạo instance runtime từ đó.
+
+> **Dependency với GDD — Enemies:** Nội dung cụ thể của từng enemy (HP, spells, policy config) phụ thuộc vào **GDD — Enemies** — tài liệu này cần được viết trước khi implement `EnemyDefinitions`. Kiến trúc AI đã sẵn sàng nhận data từ GDD đó.
 
 ---
 
 ### `SpellDefinitions`
-
-Pool tất cả Spell trong game:
 
 ```
 SpellDefinition {
@@ -718,14 +1147,14 @@ SpellDefinition {
     element      : Fire | Water | Ice | Lightning
     baseCost     : int
     baseCooldown : int
-    targetType   : Single | AllEnemies | Self | Random(n)
+    targetType   : Single | AllEnemies | Self | Random(n) | LowestHp(n)
     effects      : EffectApplication[]
 }
 
 EffectApplication {
     effectType   : EffectType
-    valueFormula : string     // VD: "0.8 × fire_potency" — evaluate lúc cast
-    condition    : Condition? // nullable — một số spell có điều kiện kích hoạt
+    valueFormula : string     // VD: "0.8 × fire_potency"
+    condition    : Condition?
 }
 ```
 
@@ -733,86 +1162,123 @@ EffectApplication {
 
 ### `RuneDefinitions`
 
-Pool tất cả Rune trong game:
-
 ```
 RuneDefinition {
     id           : string
     displayName  : string
     rank         : Rank (I | II | III)
-    passiveType  : StatModifier | ConditionalTrigger | TurnHook | ...
-    passiveConfig: object  // tham số tùy theo passiveType
+    passiveType  : StatModifier | ConditionalTrigger | TurnHook
+    passiveConfig: object
 }
 ```
 
 ---
 
-## 10. Luồng dữ liệu chính
+### `SaveSystem` _(Thêm mới v2)_
+
+**Trách nhiệm:** Serialize và deserialize trạng thái run tại các checkpoint.
+
+**Checkpoint:** Xảy ra **sau khi player ra khỏi Node** (không save mid-combat). Các checkpoint: sau combat thắng (post-reward), sau Shop, sau Rest, sau Event.
+
+**Không save mid-combat** vì: serialize toàn bộ EffectSystem, ArmorStack, spell cooldown, VisualQueue là phức tạp và dễ bị exploit (save-scum từng đòn).
+
+**Dữ liệu được save:**
+
+```
+SaveData {
+    currentArc          : int
+    mapSeed             : int         // để regenerate map giống hệt
+    visitedNodeIds      : string[]
+    playerSnapshot      : PlayerSnapshot
+    gold                : int
+    pendingCombatModifier: CombatModifier?
+}
+```
+
+**Trigger save:** `GameManager` subscribe vào `NodeRouter.OnNodeExit` → gọi `SaveSystem.Save()` sau mỗi Node.
+
+---
+
+## 12. Luồng dữ liệu chính
 
 ### Luồng: Player cast Spell lên Enemy
 
 ```
 Player chọn Spell → SpellCaster
-  │
-  ├── [Validate] SpellSlotManager.IsImprinted(spell)
-  ├── [Validate] CooldownTracker.GetCooldown(spell) == 0
-  ├── [Validate] PlayerController.currentMp >= cost (sau Distracted modifier)
-  │
-  ├── HitDodgeResolver.Resolve(player.AGI, enemy.AGI)
-  │       └── [Miss] → abort, không trừ MP, không set cooldown
-  │
-  ├── DamageCalculator.Calculate(spell, player.fire_potency, enemy.fire_res)
-  │       └── ArmorStack.TakeDamage(actual_damage)
-  │               └── EnemyController.currentHp -= overflow
-  │
+  ├── [Validate] slot, cooldown, mp
+  ├── HitDodgeResolver → Miss: abort + Enqueue(PlayMissAnim)
+  ├── VisualQueue.Enqueue(PlaySpellAnim)
+  ├── DamageCalculator(caster.GetEffectivePotency, target.GetEffectiveResistance)
+  │       └── ArmorStack.TakeDamage → target.currentHp -= overflow
+  │       └── VisualQueue.Enqueue(ShowDamageNumber)
   ├── EffectSystem(enemy).Apply(Burn)
-  │       └── Combination Check → trigger Detonates nếu Dazed đã active
-  │
-  ├── PlayerController.currentMp -= cost
-  └── CooldownTracker.Set(spell, spell.baseCooldown)
+  │       ├── Check element interaction → Neutralize / Refresh / Apply
+  │       └── phát OnEffectApplied
+  ├── CombatResolver.CheckCombinations(enemy)
+  │       └── Burn + Dazed → Detonates
+  │               └── DamageCalculator.ApplyRawDamage(ignoreResistance, ignoreArmor)
+  │               └── VisualQueue.Enqueue(PlayDetonatesAnim, ShowDamageNumber)
+  ├── player.currentMp -= cost
+  └── CooldownTracker.Set(spell, baseCooldown)
 ```
 
-### Luồng: Kết thúc một combat Node
+### Luồng: Enemy Action Phase
+
+```
+TurnManager → PhaseHandler.RunActionPhase(enemy)
+  ├── Nếu Frozen flag: skip, return
+  ├── context = new CombatContext(player, enemy, roundNumber)
+  ├── available = SpellSelector.GetAvailableSpells(enemy, context)
+  ├── spellId = enemy.DecisionPolicy.SelectSpell(available, context)
+  ├── Thực thi spell → DamageCalculator / EffectSystem / CombatResolver
+  └── CooldownTracker.Set(spellId, baseCooldown)
+```
+
+### Luồng: Kết thúc combat Node
 
 ```
 TurnManager phát hiện all enemies currentHp <= 0
-  │
-  ├── GameManager.pendingCombatModifier = null  // xóa modifier tạm từ Event
-  ├── GoldLedger.Earn(goldReward theo ArcConfig)
-  ├── RewardSystem.GenerateOffer(combatType, currentArc)
-  │       └── Player chọn 1 trong 3 → PlayerController.AddToInventory(item)
-  └── NodeRouter.OnNodeComplete() → trở về MapView
+  ├── await VisualQueue (đợi animation chết xong)
+  ├── GameManager.pendingCombatModifier = null
+  ├── GoldLedger.Earn(goldReward)
+  ├── RewardSystem.GenerateOffer → player chọn 1
+  ├── SaveSystem.Save()
+  └── NodeRouter.OnNodeComplete() → MapView
 ```
 
-### Luồng: Player vào Event Node (Force Trade)
+### Luồng: Rune bị Purge tại Shop
 
 ```
-NodeRouter → EventSystem.TriggerEvent()
-  │
-  ├── Draw event từ shuffled queue của Arc hiện tại
-  ├── Event = Force Trade
-  │       └── GameManager.pendingCombatModifier = { all_res: -15%, all_potencies: +15% }
-  └── Trở về MapView
-
-Lần sau player vào Combat Node:
-  ├── CombatScene đọc GameManager.pendingCombatModifier
-  ├── PlayerController áp modifier trong suốt combat đó
-  └── Sau combat → GameManager.pendingCombatModifier = null
+ShopSystem.PurgeRune(runeIndex)
+  ├── rune = player.embeddedRunes[runeIndex]
+  ├── rune.passive.OnPurge(player)        // gỡ toàn bộ hook, tránh memory leak
+  ├── player.embeddedRunes[runeIndex] = null
+  ├── GoldLedger.Spend(purgePrice)
+  └── PlayerController.RecalculateBaseAttributes()
 ```
 
 ---
 
-## 11. Ghi chú triển khai
+## 13. Ghi chú triển khai
 
 |Mục|Ghi chú|
 |---|---|
-|`EffectSystem` dùng Dictionary keyed by EffectType|Combo check O(1) thay vì scan List|
-|`ArmorStack` dùng SortedList descending by hurt_order|Damage luôn lấy `.Last()`, overflow tự lan xuống|
-|`pendingCombatModifier` là nullable|Không cần persistent modifier system giữa các Node|
-|`BehaviorPattern` là interface|Thêm pattern mới không sửa `EnemyDefinition`|
-|Sub-attribute recalculate theo event, không real-time|Tránh overhead trong mỗi frame combat|
-|Tất cả hằng số balancing trong ScriptableObject|GD chỉnh không cần rebuild|
-|`GoldLedger` là single source of truth cho Gold|Không có hệ thống nào khác modify trực tiếp|
-|Event pool dùng shuffled queue per Arc|Không lặp Event trong cùng Arc nếu pool đủ lớn|
-|`Detonates` bypass cả Resistance lẫn Armor|Cần flag riêng `ignoreResistance`, `ignoreArmor` trong DamageCalculator|
-|Crystalize flag bật ở bước 3, Burn xử lý ở bước 5|Crystalize apply trong lượt hiện tại không bảo vệ ngay — chỉ từ lượt sau|
+|`EffectSystem` dùng Dictionary keyed by EffectType|Combo check O(1), không scan List|
+|`ArmorStack` dùng SortedList descending|Damage luôn lấy MaxKey, overflow tự lan xuống|
+|Base sub-attribute tĩnh, getter dynamic|Không overhead trong combat, không hi sinh tính chính xác|
+|`GetEffectivePotency/Resistance/AGI()`|Gọi lúc cast/damage, không cache — đảm bảo luôn phản ánh effect hiện tại|
+|`IRunePassive.OnPurge()` bắt buộc|Phải unsubscribe mọi event đã đăng ký trong `OnEmbed()`|
+|`CombatResolver` là mediator duy nhất|`EffectSystem` và `DamageCalculator` không được reference nhau|
+|`VisualQueue` là barrier giữa các Phase|`TurnManager` không chuyển Phase khi queue chưa drain|
+|`SaveSystem` chỉ save tại Node boundary|Không save mid-combat — tránh phức tạp và exploit|
+|`CombatContext` là snapshot bất biến|Tạo mới mỗi lần enemy action, không giữ reference sống|
+|`DecisionPolicy` là data-driven|Hành vi enemy do GD cấu hình trong `EnemyDefinition`, không hard-code|
+|`GDD — Enemies` là dependency còn thiếu|`PriorityPolicy` rule cụ thể và `ScriptedPolicy` sequence cần nội dung từ GDD đó|
+|`Detonates` bypass Resistance và Armor|Flag `ignoreResistance`, `ignoreArmor` trong `ApplyRawDamage`|
+|Crystalize flag bật bước 3, Burn bước 5|Crystalize apply trong lượt hiện tại không bảo vệ ngay|
+|`pendingCombatModifier` cần icon trên MapView|`PendingModifierView` subscribe `GameManager.OnPendingModifierChanged`|
+|Logic không reference UI|UI subscribe event một chiều — không bao giờ ngược lại|
+|Input không validate ở UI|UI gọi API → nhận `CastResult` / `PurchaseResult` → phản hồi|
+|Unsubscribe trong `OnDestroy()`|Bắt buộc với mọi View, tương tự `IRunePassive.OnPurge()`|
+|Enemy Intent là optional feature|Cần xác nhận với GD trước khi implement `GetIntendedSpell()`|
+|Chi tiết widget từng screen|Thuộc UI Design doc riêng, ngoài scope Architecture doc|
