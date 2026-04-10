@@ -32,8 +32,8 @@ Tạo Unity project và folder structure theo đúng Naming Convention doc.
 
 - [x] Unity project tạo thành công, Unity version đã được commit vào `.gitignore` và `ProjectSettings/`
 - [x] Toàn bộ folder structure cấp 1 và cấp 2 tồn tại trong `Assets/` theo đúng Naming Convention doc
-- [ ] Assembly Definition (`.asmdef`) được tạo cho `Logic`, `Tests` tách biệt khỏi `Unity`
-- [ ] `Logic.asmdef` không reference `UnityEngine` — compile thành công khi chạy batch compile
+- [x] Assembly Definition (`.asmdef`) được tạo cho `Logic`, `Tests` tách biệt khỏi `Unity`
+- [x] `Logic.asmdef` không reference `UnityEngine` — compile thành công khi chạy batch compile
 
 ---
 
