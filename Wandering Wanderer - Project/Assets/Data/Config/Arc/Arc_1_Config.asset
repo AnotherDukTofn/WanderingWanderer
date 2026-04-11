@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd0cd28126e9b684796855315f68cb25, type: 3}
+  m_Name: Arc_1_Config
+  m_EditorClassIdentifier: Unity::Unity.Data.ArcConfigSO
+  TotalNodes: 0
+  MinPath: 0
+  CombatMinionsRate: 0
+  CombatEliteRate: 0
+  CombatBossRate: 0
+  ShopRate: 0
+  RestRate: 0
+  EventRate: 0
+  MinElites: 0
+  MinShop: 0
+  MinRest: 0
+  MinEvent: 0
+  Rank1ShopRate: 0
+  Rank2ShopRate: 0
+  Rank3ShopRate: 0
+  GoldRewards: 0
