@@ -6,13 +6,38 @@ ___
 
 # TDD — Testing Guide (Unity)
 
-1. [Tổng quan Testing Strategy](#1-t%E1%BB%95ng-quan-testing-strategy)
-2. [Cài đặt Unity Test Framework](#2-c%C3%A0i-%C4%91%E1%BA%B7t-unity-test-framework)
+## Mục lục
+
+1. [Tổng quan Testing Strategy](#1-tổng-quan-testing-strategy)
+   - [Ba tầng test](#ba-tầng-test)
+   - [Phân loại theo system](#phân-loại-theo-system)
+2. [Cài đặt Unity Test Framework](#2-cài-đặt-unity-test-framework)
+   - [2.1. Bật Test Framework](#21-bật-test-framework)
+   - [2.2. Tạo Assembly Definitions](#22-tạo-assembly-definitions)
+   - [2.3. Verify setup](#23-verify-setup)
 3. [Edit Mode Tests](#3-edit-mode-tests)
+   - [3.1. Cấu trúc cơ bản](#31-cấu-trúc-cơ-bản)
+   - [3.2. Test nhiều case với `[TestCase]`](#32-test-nhiều-case-với-testcase)
+   - [3.3. Test event được phát](#33-test-event-được-phát)
+   - [3.4. Test với Mock](#34-test-với-mock-không-dùng-moq--dùng-hand-written-stub)
+   - [3.5. Test statistical (Random)](#35-test-statistical-random)
+   - [3.6. Test ScriptableObject data](#36-test-scriptableobject-data-không-cần-scene)
 4. [Play Mode Tests](#4-play-mode-tests)
+   - [4.1. Cấu trúc cơ bản](#41-cấu-trúc-cơ-bản)
+   - [4.2. Test TurnManager phase order](#42-test-turnmanager-phase-order)
+   - [4.3. Test View unsubscribe](#43-test-view-unsubscribe)
+   - [4.4. Test timing với LogAssert](#44-test-timing-với-logassert)
 5. [Manual Tests](#5-manual-tests)
+   - [5.1. Checklist Manual Test — Combat](#51-checklist-manual-test--combat)
+   - [5.2. Checklist Manual Test — Map](#52-checklist-manual-test--map)
+   - [5.3. Checklist Manual Test — Shop](#53-checklist-manual-test--shop)
+   - [5.4. Checklist Manual Test — Save/Load](#54-checklist-manual-test--saveload)
+   - [5.5. Performance check](#55-performance-check)
 6. [Test Scene Setup](#6-test-scene-setup)
-7. [Hướng dẫn viết test theo từng system](#7-h%C6%B0%E1%BB%9Bng-d%E1%BA%ABn-vi%E1%BA%BFt-test-theo-t%E1%BB%ABng-system)
+   - [6.1. `TestCombatScene`](#61-testcombatscene)
+   - [6.2. `TestMapScene`](#62-testmapscene)
+   - [6.3. Test Configuration](#63-test-configuration)
+7. [Hướng dẫn viết test theo từng system](#7-hướng-dẫn-viết-test-theo-từng-system)
 
 ---
 

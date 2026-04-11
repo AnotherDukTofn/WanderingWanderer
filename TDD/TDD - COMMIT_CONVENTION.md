@@ -1,4 +1,16 @@
-# Commit Convention
+___
+**Game:** Wandering Wanderer 
+**Author:** DukTofn 
+**Last Updated:** 11/04/2026 
+___ 
+## Mục lục
+- [1. Cấu trúc cơ bản](#1-cấu-trúc-cơ-bản)
+- [2. Các loại Commit (Type)](#2-các-loại-commit-type)
+- [3. Phạm vi (Scope) - Khuyến nghị](#3-phạm-vi-scope---khuyến-nghị)
+- [4. Quy tắc viết Tiêu đề (Description)](#4-quy-tắc-viết-tiêu-đề-description)
+- [5. Ví dụ cụ thể](#5-ví-dụ-cụ-thể)
+
+---
 
 Dự án này sử dụng tiêu chuẩn **Conventional Commits** để viết commit message. Điều này giúp lịch sử git luôn rõ ràng, dễ theo dõi tiến độ và liên kết với các Task đang làm.
 

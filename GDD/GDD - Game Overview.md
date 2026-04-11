@@ -4,6 +4,35 @@ ___
 **Last Updated:** 05/04/2026
 ___
 
+## Mục lục
+1. [Introduction](#1-introduction)
+2. [Gameplay](#2-gameplay)
+   - [2.1. Game Elements](#21-game-elements)
+     - [2.1.1. Spells](#211-spells)
+     - [2.1.2. Main Attributes](#212-main-attributes)
+     - [2.1.3. Spell Slots](#213-spell-slots)
+     - [2.1.4. MP](#214-mp)
+     - [2.1.5. HP](#215-hp)
+     - [2.1.6. Equipment](#216-equipment)
+     - [2.1.7. Equipment Slots](#217-equipment-slots)
+     - [2.1.8. Runes](#218-runes)
+     - [2.1.9. Rune Sockets](#219-rune-sockets)
+     - [2.1.10. Magic Shop](#2110-magic-shop)
+     - [2.1.11. Enemies](#2111-enemies)
+     - [2.1.12. Nodes](#2112-nodes)
+   - [2.2. Core Mechanics](#22-core-mechanics)
+     - [2.2.1. Elemental Effects](#221-elemental-effects)
+     - [2.2.2. Element Interactions](#222-element-interactions)
+     - [2.2.3. Turn Logic](#223-turn-logic)
+   - [2.3. Progression](#23-progression)
+     - [2.3.1. Level Structure](#231-level-structure)
+     - [2.3.2. Combat Win/Lose Condition](#232-combat-winlose-condition)
+3. [Theme](#3-theme)
+   - [3.1. Visual Style](#31-visual-style)
+   - [3.2. Sound Direction](#32-sound-direction)
+
+---
+
 # 1. Introduction
 
 **Name:** Wandering Wanderer.  
@@ -40,7 +69,7 @@ Chỉ số của người chơi, ảnh hưởng trực tiếp đến quá trình
 |---|---|---|
 |POTENCY|`POT`|Tăng sát thương và cường độ hiệu ứng của các phép.|
 |SPIRIT|`SPI`|Tăng MP tối đa và lượng MP hồi lại mỗi lượt.|
-|WISDOM|`WIS`|Đáp ứng yêu cầu mở Spell Slot.|
+|WISDOM|`WIS`|Đáp ứng **hai** nhóm yêu cầu liên quan phép: (1) mở / mở khóa **Spell Slot** (xem `WisdomSlotConfig` và dịch vụ `Enlighten`); (2) ngưỡng **WIS tối thiểu để Imprint** từng spell — mỗi spell có `minWisdomToImprint` riêng trong data (xem _Spells_).|
 |VITALITY|`VIT`|Tăng HP tối đa và các chỉ số kháng nguyên tố.|
 |AGILITY|`AGI`|Ảnh hưởng đến tỷ lệ trúng/né khi tấn công. Xem chi tiết tại _Combat Design — Section 2.2.4_.|
 
@@ -49,8 +78,9 @@ Chỉ số của người chơi, ảnh hưởng trực tiếp đến quá trình
 ### 2.1.3. Spell Slots
 
 - Những ô để gắn phép, chỉ các phép được gắn trong ô mới có thể sử dụng trong combat.
-- Người chơi bắt đầu với 1 ô phép. Có thể mở thêm khi `Enlighten` tại Magic Shop, tuy nhiên các ô tiếp theo chỉ mở khóa khi đủ `WIS`. Tối đa 5 ô khi max `WIS`.
+- Người chơi bắt đầu với 1 ô phép. Có thể mở thêm khi `Enlighten` tại Magic Shop, tuy nhiên các ô tiếp theo chỉ mở khóa khi đủ `WIS` (ngưỡng theo từng slot — `WisdomSlotConfig`). Tối đa 5 ô khi max `WIS`.
 - Gắn phép vào ô thông qua `Imprint Spells`, gỡ ra thông qua `Forget Spells` (chỉ khả dụng ngoài combat).
+- **WIS khi Imprint:** mỗi spell có **ngưỡng WIS tối thiểu** (`minWisdomToImprint`) độc lập với việc mở slot. Chỉ khi `WIS` hiện tại của nhân vật (sau equipment/rune) **≥** ngưỡng của spell đó thì mới được Imprint vào một ô đã mở. `Forget` không đòi hỏi WIS.
 
 ### 2.1.4. MP
 

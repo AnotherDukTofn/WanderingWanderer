@@ -4,6 +4,11 @@ ___
 **Last Updated:** 05/04/2026
 **Figma:** [Game Architecture](https://www.figma.com/board/7RvpKSgyjrfYAY65Czb9mo/Wandering-Wanderer---Game-Architecture?node-id=0-1&p=f&t=Sw6bfNqnTEyAvYys-0)
 ___
+## Mục lục
+- [Layer Overview](#layer-overview)
+- [Implementation Notes](#implementation-notes)
+
+---
 
 ```mermaid
 flowchart LR
