@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6d01b5ef3b03814eaabc6288126ca3d, type: 3}
+  m_Name: RewardRateConfig
+  m_EditorClassIdentifier: Unity::RewardRateConfigSO
+  MinionArc1:
+    Rank1: 55
+    Rank2: 35
+    Rank3: 10
+  MinionArc2:
+    Rank1: 40
+    Rank2: 40
+    Rank3: 20
+  MinionArc3:
+    Rank1: 25
+    Rank2: 40
+    Rank3: 35
+  EliteArc1:
+    Rank1: 55
+    Rank2: 35
+    Rank3: 10
+  EliteArc2:
+    Rank1: 40
+    Rank2: 40
+    Rank3: 20
+  EliteArc3:
+    Rank1: 25
+    Rank2: 40
+    Rank3: 35
+  BossArc1:
+    Rank1: 20
+    Rank2: 50
+    Rank3: 30
+  BossArc2:
+    Rank1: 10
+    Rank2: 50
+    Rank3: 40
+  BossArc3:
+    Rank1: 0
+    Rank2: 40
+    Rank3: 70

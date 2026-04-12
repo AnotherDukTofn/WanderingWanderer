@@ -1,7 +1,21 @@
 using UnityEngine;
+using System;
 
-[CreateAssetMenu(fileName = "WisdomSlotConfig", menuName = "SO/WisdomSlotConfig")]
-public class WisdomSlotConfigSO : ScriptableObject
+namespace Game.Unity.Data
 {
-    public int[] WisdomEnlightenThreshold = new int[5];
+    [Serializable]
+    public struct WisThreshold
+    {
+        public int Slot1;
+        public int Slot2;
+        public int Slot3;
+        public int Slot4;
+        public int Slot5;
+    }
+
+    [CreateAssetMenu(fileName = "WisdomSlotConfig", menuName = "SO/WisdomSlotConfig")]
+    public class WisdomSlotConfigSO : ScriptableObject
+    {
+        public WisThreshold WisdomEnlightenThreshold;
+    }
 }

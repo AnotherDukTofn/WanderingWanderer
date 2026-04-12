@@ -163,8 +163,8 @@ ___
 
 - [x] 3 asset `ArcConfig_1/2/3` — mỗi asset có field: tổng Node, tỷ lệ NodeType, min path constraint, tỷ lệ Rank Shop
 - [x] `WisdomSlotConfig` có mảng 5 phần tử WIS threshold
-- [ ] `RewardRateConfig` có bảng tỷ lệ Rank theo combatType × Arc (tổng mỗi dòng = 100%)
-- [ ] Không có serialization error trong Inspector
+- [x] `RewardRateConfig` có bảng tỷ lệ Rank theo combatType × Arc (tổng mỗi dòng = 100%)
+- [x] Không có serialization error trong Inspector
 
 ---
 

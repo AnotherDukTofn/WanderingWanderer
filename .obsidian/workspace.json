@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "8b381b9f8c6d2b4d",
+        "id": "d3b86f30761e7409",
         "type": "tabs",
         "children": [
           {
-            "id": "889e70a50c5c5148",
+            "id": "85e148073df6926f",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TDD/TDD - DETAILED_ARCHITECTURE.md",
+                "file": "TDD/TASK_MANAGER.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TDD - DETAILED_ARCHITECTURE"
+              "title": "TASK_MANAGER"
             }
           }
         ]
@@ -180,28 +180,33 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "obsidian-excalidraw-plugin:New drawing": false
     }
   },
-  "active": "889e70a50c5c5148",
+  "active": "85e148073df6926f",
   "lastOpenFiles": [
-    "Wandering Wanderer - Project/Temp/Bin/Debug/Assembly-CSharp-firstpass",
-    "Wandering Wanderer - Project/Temp/Bin/Debug/Unity",
-    "Wandering Wanderer - Project/Temp/Bin/Debug/Foundation",
-    "Wandering Wanderer - Project/Temp/Bin/Debug/Unity.Rider.Editor",
-    "Wandering Wanderer - Project/Temp/Bin/Debug",
-    "Wandering Wanderer - Project/Temp/Bin",
+    "GDD/GDD - Progression Design.md",
+    "Wandering Wanderer - Project/Temp/ADB-Refreshcb064923572b9694ab0e7f7db14bb60b",
+    "Wandering Wanderer - Project/Temp/ADB-Refresh3eb7abf604a29b841bf6c07dff616bcc",
+    "Wandering Wanderer - Project/Temp/ADB-Refreshad841c18f7142ff4d888ddb70877900a",
+    "TDD/TASK_MANAGER.md",
+    "Wandering Wanderer - Project/Library/ProtocolInstance.json",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aotqhamhfqr.8j2",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aot92onjxe5.b31",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aotcxcr3cuo.y2h",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aot8prsra2j.zuz",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aotg2v9199d.q3r",
+    "Wandering Wanderer - Project/Temp/Burst/burst-aotgtkx3xyv.zc6",
+    "Excalidraw/Drawing 2026-04-12 16.52.23.excalidraw.md",
+    "Excalidraw/Drawing 2026-04-11 20.12.18.excalidraw.md",
+    "THIẾT KẾ NHÂN VẬT & CÂU CHUYỆN GAME.md",
+    "Excalidraw/Drawing 2026-04-12 01.52.48.excalidraw.md",
+    "Excalidraw/Drawing 2026-04-12 01.51.25.excalidraw.md",
+    "TDD/TDD - DETAILED_ARCHITECTURE.md",
     "TDD/TDD - NAMING_CONVENTION.md",
     "TDD/TDD - COMMIT_CONVENTION.md",
-    "TDD/TDD - DETAILED_ARCHITECTURE.md",
     "TDD/TDD - ARCHITECTURE_OVERVIEW.md",
-    "TDD/TASK_MANAGER.md",
-    "GDD/GDD - Progression Design.md",
-    "Wandering Wanderer - Project/Library/UndoStack.bin",
-    "Wandering Wanderer - Project/Library/UndoData.bin",
-    "Wandering Wanderer - Project/Library/Artifacts/22/222815e7c070dd061cc31d8f63cb256e",
-    "Wandering Wanderer - Project/Library/Artifacts/09/093df86b7885f976ea23ab7fc7f3e6df",
-    "Wandering Wanderer - Project/Library/TempArtifacts/Extra/0f2ceb494300a4c488dbe46a6a9a0411.b.index",
     "TDD/TDD - TESTING_GUIDE.md",
     "GDD/GDD - Combat Design.md",
     "GDD/GDD - Game Overview.md",
@@ -221,11 +226,6 @@
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-system/nodes-note-package.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-system/nodes-input-system-ports.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-system/nodes-input-system-output-trigger-port.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-system/nodes-input-action-change.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-manager/nodes-note-manual.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-manager/nodes-input-output-trigger.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/input-manager/nodes-desc-end.md",
-    "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Documentation~/snippets/custom-events/vs-tasks-note-end.md",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Shared/EditorAssetResources/SplitButtonArrow.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/VariablesSaver@32x.png",
     "Wandering Wanderer - Project/Library/PackageCache/com.unity.visualscripting@8bed5ad90189/Editor/VisualScripting.Core/IconMap/VariablesAsset@32.png",
