@@ -174,11 +174,11 @@ ___
 
 **AC:**
 
-- [ ] `StatModifier` struct nằm trong `Logic` assembly: `{ StatType stat, ModType modType, float value }`
-- [ ] `ModType` enum: `Flat`, `PercentAdd`
-- [ ] `StatType` enum đủ tất cả stat có thể modify: `POT, SPI, WIS, VIT, AGI, FirePotency, WaterPotency, IcePotency, LightningPotency, FireRes, WaterRes, IceRes, LightningRes, MaxHp, MaxMp, MpRecovery, AllPotency, AllResistance`
-- [ ] Struct serialize được trong Unity Inspector (đánh dấu `[Serializable]`)
-- [ ] **Edit Mode Test**: tạo vài `StatModifier`, đọc lại field đúng giá trị
+- [x] `StatModifier` struct nằm trong `Logic` assembly: `{ StatType stat, ModType modType, float value }`
+- [x] `ModType` enum: `Flat`, `PercentAdd`
+- [x] `StatType` enum đủ tất cả stat có thể modify: `POT, SPI, WIS, VIT, AGI, FirePotency, WaterPotency, IcePotency, LightningPotency, FireRes, WaterRes, IceRes, LightningRes, MaxHp, MaxMp, MpRecovery, AllPotency, AllResistance`
+- [x] Struct serialize được trong Unity Inspector (đánh dấu `[Serializable]`)
+- [x] **Edit Mode Test**: tạo vài `StatModifier`, đọc lại field đúng giá trị
 
 ---
 
