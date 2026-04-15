@@ -1,8 +1,9 @@
 ___
- **Game:** Wandering Wanderer 
- **Author:** DukTofn 
- **Last Updated:** 09/04/2026
+ **Game:** Wandering Wanderer
+ **Author:** DukTofn
+ **Last Updated:** 14/04/2026
 ___
+
 ## Mục lục
 
 1. [Folder Structure](#1-folder-structure)
@@ -65,14 +66,17 @@ Assets/
 ```
 Data/
   ├── Config/
-  │     ├── CombatConfig.asset
-  │     ├── ArcConfig_1.asset
-  │     ├── ArcConfig_2.asset
-  │     ├── ArcConfig_3.asset
-  │     ├── ShopPriceConfig.asset
-  │     ├── RewardRateConfig.asset
-  │     ├── EventConfig.asset
-  │     └── WisdomSlotConfig.asset
+  │     ├── Arc/
+  │     │     ├── Arc_1_Config.asset
+  │     │     ├── Arc_2_Config.asset
+  │     │     └── Arc_3_Config.asset
+  │     ├── Combat/
+  │     │     ├── CombatConfig.asset
+  │     │     └── WisdomSlotConfig.asset
+  │     └── Progression/
+  │           ├── ShopPriceConfig.asset
+  │           ├── RewardRateConfig.asset
+  │           └── EventConfig.asset
   ├── Events/                           ← EventChannelSO assets (cross-boundary events)
   │     ├── CombatEndedSO.asset
   │     ├── NodeEnteredSO.asset
@@ -116,134 +120,138 @@ Data/
 
 ```
 Scripts/
-  ├── Foundation/               ← Utility thuần, không biết game logic tồn tại (Assembly: Foundation)
-  │     ├── Foundation.asmdef
-  │     ├── Events/
-  │     │     ├── SinglePayloadEvent/
-  │     │     │     ├── EventChannelSO.cs         ← abstract EventChannelSO<T>
-  │     │     │     └── EventListener.cs           ← abstract EventListener<T> : MonoBehaviour
-  │     │     └── TwoPayloadEvent/
-  │     │           ├── EventChannelSO.cs          ← abstract EventChannelSO<T1, T2>
-  │     │           └── EventListener.cs           ← abstract EventListener<T1, T2>
-  │     └── StateMachine/
-  │           ├── IState.cs
-  │           ├── IAsyncState.cs                   ← extend IState, thêm UniTask EnterAsync()
-  │           └── StateMachineManager.cs
+  ├── Core/
+  │     └── Foundation/               ← Utility thuần, không biết game logic tồn tại (Assembly: Foundation)
+  │           ├── Foundation.asmdef
+  │           ├── EventChannel/
+  │           │     ├── SinglePayload/
+  │           │     │     ├── EventChannelSO.cs         ← abstract EventChannelSO<T>
+  │           │     │     └── EventListener.cs           ← abstract EventListener<T> : MonoBehaviour
+  │           │     └── DoublePayload/
+  │           │           ├── EventChannelSO.cs          ← abstract EventChannelSO<T1, T2>
+  │           │           └── EventListener.cs           ← abstract EventListener<T1, T2>
+  │           └── StateMachine/
+  │                 ├── IState.cs
+  │                 ├── IAsyncState.cs                   ← extend IState, thêm UniTask EnterAsync()
+  │                 └── StateMachineManager.cs
   │
-  ├── Logic/                    ← Pure C#, KHÔNG reference UnityEngine (Assembly: Logic)
-  │     ├── Logic.asmdef
-  │     ├── Combat/
-  │     │     ├── ArmorStack.cs
-  │     │     ├── CombatResolver.cs
-  │     │     ├── DamageCalculator.cs
-  │     │     ├── EffectSystem.cs
-  │     │     ├── HitDodgeResolver.cs
-  │     │     └── PhaseHandler.cs
-  │     ├── Entities/
-  │     │     ├── PlayerController.cs
-  │     │     ├── EnemyController.cs
-  │     │     └── AI/
-  │     │           ├── CombatContext.cs
-  │     │           ├── SpellSelector.cs
-  │     │           ├── IDecisionPolicy.cs
-  │     │           ├── RandomPolicy.cs
-  │     │           ├── WeightedRandomPolicy.cs
-  │     │           ├── PriorityPolicy.cs
-  │     │           └── ScriptedPolicy.cs
-  │     ├── Spells/
-  │     │     ├── SpellCaster.cs
-  │     │     ├── SpellSlotManager.cs
-  │     │     └── CooldownTracker.cs
-  │     ├── Passives/
-  │     │     ├── EquipmentSystem.cs
-  │     │     ├── RuneSystem.cs
-  │     │     └── IRunePassive.cs
-  │     ├── Meta/
-  │     │     ├── GoldLedger.cs
-  │     │     ├── RewardSystem.cs
-  │     │     ├── ShopSystem.cs
-  │     │     ├── EventSystem.cs
-  │     │     ├── RestNode.cs
-  │     │     └── SaveSystem.cs
-  │     ├── Map/
-  │     │     ├── MapSystem.cs
-  │     │     └── NodeRouter.cs
-  │     ├── Core/
-  │     │     ├── GameManager.cs
-  │     │     └── TurnManager.cs
-  │     └── Shared/
-  │           ├── Enums.cs             ← Element, EffectType, NodeType, Phase, CombatResult...
-  │           ├── Structs.cs           ← StatModifier, CombatModifier, RewardOffer...
-  │           ├── Interfaces.cs        ← IEntity, IActionCommand...
-  │           └── Constants.cs         ← magic number tạm thời (nên chuyển sang SO)
-  │
-  ├── Unity/                    ← MonoBehaviour, Unity-specific (Assembly: Unity)
-  │     ├── Unity.asmdef
-  │     ├── Core/
-  │     │     └── GameManagerDriver.cs    ← MonoBehaviour, gọi _fsm.Tick() trong Update()
-  │     ├── Bridges/                      ← EventBridge adapters: relay C# event → EventChannelSO
-  │     │     ├── CombatEndedBridge.cs
-  │     │     ├── NodeEnteredBridge.cs
-  │     │     ├── GoldChangedBridge.cs
-  │     │     └── PendingModifierBridge.cs
-  │     ├── Presentation/
-  │     │     ├── VisualQueue.cs
-  │     │     └── Commands/
-  │     │           ├── ShowDamageNumberCommand.cs
-  │     │           ├── ShowHpGainCommand.cs
-  │     │           ├── ShowMpGainCommand.cs
-  │     │           ├── PlaySpellAnimCommand.cs
-  │     │           ├── PlayDamageAnimCommand.cs
-  │     │           ├── PlayEffectApplyAnimCommand.cs
-  │     │           ├── PlayEffectExpireAnimCommand.cs
-  │     │           ├── PlayBurnAnimCommand.cs
-  │     │           ├── PlayFrozenThawAnimCommand.cs
-  │     │           ├── PlayCrystalizeShieldAnimCommand.cs
-  │     │           ├── PlayDetonatesAnimCommand.cs
-  │     │           ├── PlayDeathAnimCommand.cs
-  │     │           └── ParallelCommand.cs           ← UniTask.WhenAll() wrapper
-  │     ├── UI/
+  ├── Game/
+  │     ├── Logic/                    ← Pure C#, KHÔNG reference UnityEngine (Assembly: Logic)
+  │     │     ├── Logic.asmdef
   │     │     ├── Combat/
-  │     │     │     ├── PlayerStatusView.cs
-  │     │     │     ├── EnemyStatusView.cs
-  │     │     │     ├── EffectView.cs
-  │     │     │     ├── SpellBarView.cs
-  │     │     │     └── TurnIndicatorView.cs
+  │     │     │     ├── ArmorStack.cs
+  │     │     │     ├── CombatResolver.cs
+  │     │     │     ├── DamageCalculator.cs
+  │     │     │     ├── EffectSystem.cs
+  │     │     │     ├── HitDodgeResolver.cs
+  │     │     │     └── PhaseHandler.cs
+  │     │     ├── Entities/
+  │     │     │     ├── PlayerController.cs
+  │     │     │     ├── EnemyController.cs
+  │     │     │     └── AIs/
+  │     │     │           ├── CombatContext.cs
+  │     │     │           ├── SpellSelector.cs
+  │     │     │           ├── IDecisionPolicy.cs
+  │     │     │           ├── RandomPolicy.cs
+  │     │     │           ├── WeightedRandomPolicy.cs
+  │     │     │           ├── PriorityPolicy.cs
+  │     │     │           └── ScriptedPolicy.cs
+  │     │     ├── Spells/
+  │     │     │     ├── SpellCaster.cs
+  │     │     │     ├── SpellSlotManager.cs
+  │     │     │     └── CooldownTracker.cs
+  │     │     ├── Passives/
+  │     │     │     ├── EquipmentSystem.cs
+  │     │     │     ├── RuneSystem.cs
+  │     │     │     └── IRunePassive.cs
+  │     │     ├── Meta/
+  │     │     │     ├── GoldLedger.cs
+  │     │     │     ├── RewardSystem.cs
+  │     │     │     ├── ShopSystem.cs
+  │     │     │     ├── EventSystem.cs
+  │     │     │     ├── RestNode.cs
+  │     │     │     └── SaveSystem.cs
   │     │     ├── Map/
-  │     │     │     ├── MapGraphView.cs
-  │     │     │     ├── NodeView.cs
-  │     │     │     └── PendingModifierView.cs
-  │     │     ├── Shop/
-  │     │     │     ├── ShopInventoryView.cs
-  │     │     │     ├── ShopServiceView.cs
-  │     │     │     └── PlayerEquipmentView.cs
-  │     │     ├── Reward/
-  │     │     │     └── RewardChoiceView.cs
-  │     │     ├── Event/
-  │     │     │     └── EventView.cs
-  │     │     └── Rest/
-  │     │           └── RestView.cs
-  │     ├── Data/
-  │     │     ├── Config/                           ← SO class definitions (hoặc gom vào Definitions/)
-  │     │     │     ├── CombatConfigSO.cs
-  │     │     │     ├── ArcConfigSO.cs
-  │     │     │     ├── ShopPriceConfigSO.cs
-  │     │     │     ├── RewardRateConfigSO.cs
-  │     │     │     ├── EventConfigSO.cs
-  │     │     │     └── WisdomSlotConfigSO.cs
-  │     │     ├── Definitions/                      ← SO class definitions (*SO suffix)
-  │     │     │     ├── SpellDefinitionSO.cs        ← MinWisdomToImprint (WIS để Imprint)
-  │     │     │     ├── EnemyDefinitionSO.cs
-  │     │     │     ├── EquipmentDefinitionSO.cs
-  │     │     │     └── RuneDefinitionSO.cs
-  │     │     └── Events/                           ← Concrete EventChannelSO subclasses
-  │     │           ├── CombatEndedSO.cs
-  │     │           ├── NodeEnteredSO.cs
-  │     │           ├── GoldChangedSO.cs
-  │     │           ├── PendingModifierChangedSO.cs
-  │     │           └── RewardReadySO.cs
-  │     └── Bootstrap/
-  │           └── ConfigLoader.cs       ← MonoBehaviour inject SO vào runtime
+  │     │     │     ├── MapSystem.cs
+  │     │     │     └── NodeRouter.cs
+  │     │     ├── Core/
+  │     │     │     ├── GameManager.cs
+  │     │     │     └── TurnManager.cs
+  │     │     └── Shared/
+  │     │           ├── Enums.cs             ← Element, EffectType, NodeType, Phase, CombatResult,
+  │     │           │                           StatType, ModType, TargetResolverType, TieBreaker...
+  │     │           ├── Structs.cs           ← StatModifier, PotencyRef, TargetResolver,
+  │     │           │                           CombatModifier, RewardOffer...
+  │     │           ├── Interfaces.cs        ← IEntity, IActionCommand...
+  │     │           └── Constants.cs         ← magic number tạm thời (nên chuyển sang SO)
+  │     │
+  │     └── Unity/                    ← MonoBehaviour, Unity-specific (Assembly: Unity)
+  │           ├── Unity.asmdef
+  │           ├── Core/
+  │           │     └── GameManagerDriver.cs    ← MonoBehaviour, gọi _fsm.Tick() trong Update()
+  │           ├── Bridges/                      ← EventBridge adapters: relay C# event → EventChannelSO
+  │           │     ├── CombatEndedBridge.cs
+  │           │     ├── NodeEnteredBridge.cs
+  │           │     ├── GoldChangedBridge.cs
+  │           │     └── PendingModifierBridge.cs
+  │           ├── Presentation/
+  │           │     ├── VisualQueue.cs
+  │           │     └── Commands/
+  │           │           ├── ShowDamageNumberCommand.cs
+  │           │           ├── ShowHpGainCommand.cs
+  │           │           ├── ShowMpGainCommand.cs
+  │           │           ├── PlaySpellAnimCommand.cs
+  │           │           ├── PlayDamageAnimCommand.cs
+  │           │           ├── PlayEffectApplyAnimCommand.cs
+  │           │           ├── PlayEffectExpireAnimCommand.cs
+  │           │           ├── PlayBurnAnimCommand.cs
+  │           │           ├── PlayFrozenThawAnimCommand.cs
+  │           │           ├── PlayCrystalizeShieldAnimCommand.cs
+  │           │           ├── PlayDetonatesAnimCommand.cs
+  │           │           ├── PlayDeathAnimCommand.cs
+  │           │           └── ParallelCommand.cs           ← UniTask.WhenAll() wrapper
+  │           ├── UI/
+  │           │     ├── Combat/
+  │           │     │     ├── PlayerStatusView.cs
+  │           │     │     ├── EnemyStatusView.cs
+  │           │     │     ├── EffectView.cs
+  │           │     │     ├── SpellBarView.cs
+  │           │     │     └── TurnIndicatorView.cs
+  │           │     ├── Map/
+  │           │     │     ├── MapGraphView.cs
+  │           │     │     ├── NodeView.cs
+  │           │     │     └── PendingModifierView.cs
+  │           │     ├── Shop/
+  │           │     │     ├── ShopInventoryView.cs
+  │           │     │     ├── ShopServiceView.cs
+  │           │     │     └── PlayerEquipmentView.cs
+  │           │     ├── Reward/
+  │           │     │     └── RewardChoiceView.cs
+  │           │     ├── Event/
+  │           │     │     └── EventView.cs
+  │           │     └── Rest/
+  │           │           └── RestView.cs
+  │           ├── Data/
+  │           │     ├── Config/                           ← SO class definitions (hoặc gom vào Definitions/)
+  │           │     │     ├── CombatConfigSO.cs
+  │           │     │     ├── ArcConfigSO.cs
+  │           │     │     ├── ShopPriceConfigSO.cs
+  │           │     │     ├── RewardRateConfigSO.cs
+  │           │     │     ├── EventConfigSO.cs
+  │           │     │     └── WisdomSlotConfigSO.cs
+  │           │     ├── Definitions/                      ← SO class definitions (*SO suffix)
+  │           │     │     ├── SpellDefinitionSO.cs        ← MinWisdomToImprint (WIS để Imprint)
+  │           │     │     ├── EnemyDefinitionSO.cs
+  │           │     │     ├── EquipmentDefinitionSO.cs
+  │           │     │     └── RuneDefinitionSO.cs
+  │           │     └── Events/                           ← Concrete EventChannelSO subclasses
+  │           │           ├── CombatEndedSO.cs
+  │           │           ├── NodeEnteredSO.cs
+  │           │           ├── GoldChangedSO.cs
+  │           │           ├── PendingModifierChangedSO.cs
+  │           │           └── RewardReadySO.cs
+  │           └── Bootstrap/
+  │                 └── ConfigLoader.cs       ← MonoBehaviour inject SO vào runtime
   │
   └── Editor/                   ← Editor-only tools (không build vào game)
         └── MapDebugWindow.cs
@@ -268,7 +276,7 @@ Tests/
   │     ├── Entities/
   │     │     ├── PlayerControllerStatLayeringTests.cs   ← test L0–L2 RecalculateBaseAttributes
   │     │     ├── PlayerControllerGetterTests.cs         ← test L3 GetEffective*()
-  │     │     └── AI/
+  │     │     └── AIs/
   │     │           ├── SpellSelectorTests.cs
   │     │           ├── RandomPolicyTests.cs
   │     │           ├── PriorityPolicyTests.cs
@@ -380,13 +388,17 @@ Logic **không bao giờ** reference Unity. Foundation **không bao giờ** refe
 
 |Loại|Convention|Ví dụ|
 |---|---|---|
-|Class|PascalCase|`DamageCalculator`, `ArmorStack`|
+|Class|PascalCase|`DamageCalculator`, `ArmorStack`, `SpellCaster`|
 |Interface|`I` + PascalCase|`IEntity`, `IRunePassive`, `IDecisionPolicy`, `IActionCommand`|
-|Abstract class|PascalCase|`BaseView`|
-|Enum|PascalCase|`EffectType`, `Element`, `NodeType`, `CombatResult`|
-|Enum value|PascalCase|`EffectType.Burn`, `CombatResult.Win`|
-|Struct|PascalCase|`StatModifier`, `CombatModifier`|
-|ScriptableObject class|PascalCase|`CombatConfig`, `SpellDefinition`, `CombatEndedSO`|
+|Abstract class|PascalCase|`BaseView`, `SpellEffect`, `SpellCondition`, `EventAction`|
+|Enum|PascalCase|`EffectType`, `Element`, `NodeType`, `CombatResult`, `StatType`, `ModType`, `TargetResolverType`, `TieBreaker`, `EventCategory`, `ItemCategory`|
+|Enum value|PascalCase|`EffectType.Burn`, `CombatResult.Win`, `EventCategory.TradeOff`, `ItemCategory.Rune`|
+|Struct|PascalCase|`StatModifier`, `PotencyRef`, `TargetResolver`, `CombatModifier`, `EventDefinition`|
+|ScriptableObject class|PascalCase + `SO` suffix|`CombatConfigSO`, `ArcConfigSO`, `SpellDefinitionSO`, `EventConfigSO`, `CombatEndedSO`|
+|SpellEffect subtypes|PascalCase|`DamageEffect`, `HealEffect`, `ArmorEffect`, `StatusEffect`|
+|EventAction subtypes|PascalCase|`GiveGoldAction`, `GiveAttributeAction`, `GiveRandomItemAction`, `TakeHpPercentAction`, `TakeGoldPercentAction`, `ForceCombatAction`, `ApplyCombatModifierAction`, `OpenMiniShopAction`|
+|SpellCondition subtypes|PascalCase|`TargetHasEffect`, `TargetHpBelow`, `CasterHasEffect`|
+|Context / State classes|PascalCase|`SpellCastContext`, `CombatState`, `CombatContext`|
 
 ---
 
@@ -410,7 +422,7 @@ Logic **không bao giờ** reference Unity. Foundation **không bao giờ** refe
 |---|---|---|
 |Public field|camelCase (tránh dùng)|—|
 |Private field|`_` + camelCase|`_currentHp`, `_activeEffects`, `_fsm`|
-|`[SerializeField]` private|`_` + camelCase|`[SerializeField] private CombatConfig _config;`|
+|`[SerializeField]` private|`_` + camelCase|`[SerializeField] private CombatConfigSO _config;`|
 |Public property (get)|PascalCase|`CurrentHp`, `StoredMaxHp`|
 |Public property (get/set)|PascalCase|`CrystalizeFlag`|
 |Static field|`s_` + camelCase|`s_instance`|
@@ -420,7 +432,7 @@ Logic **không bao giờ** reference Unity. Foundation **không bao giờ** refe
 // Ví dụ đúng — PlayerController
 public class PlayerController
 {
-    [SerializeField] private CombatConfig _config;
+    [SerializeField] private CombatConfigSO _config;
 
     private int _currentHp;
     private int _storedMaxHp;
@@ -519,7 +531,7 @@ namespace Core.Foundation.StateMachine { }
 // Logic layer
 namespace Game.Logic.Combat { }
 namespace Game.Logic.Entities { }
-namespace Game.Logic.Entities.AI { }
+namespace Game.Logic.Entities.AIs { }
 namespace Game.Logic.Spells { }
 namespace Game.Logic.Passives { }
 namespace Game.Logic.Meta { }
@@ -539,6 +551,8 @@ namespace Game.Unity.Data.Config { }
 namespace Game.Unity.Data.Definitions { }
 namespace Game.Unity.Data.Events { }
 ```
+
+> **Lưu ý folder vs namespace:** Namespace logic (`Core.Foundation.Events.SinglePayloadEvent`) không nhất thiết phải ánh xạ 1:1 với tên folder vật lý (`EventChannel/SinglePayload/`). Namespace giữ ổn định, folder có thể tổ chức lại.
 
 ---
 
@@ -574,11 +588,11 @@ private int _storedFirePotency;
 |---|---|---|
 |Spell Definition|`SP_`|`SP_Fireball.asset`, `SP_IceShield.asset`|
 
-**Field bắt buộc trên `SpellDefinition` (SO class, suffix `SO` nếu đặt tên file theo convention repo):** ngoài `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, `targetType`, `effects[]`, có **`MinWisdomToImprint`** (`int`) — ngưỡng WIS tối thiểu để Imprint (GDD — Spells). Serialize trong Inspector dạng **PascalCase**.
+**Field bắt buộc trên `SpellDefinitionSO`:** ngoài `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, `targetType`, `effects[]`, có **`MinWisdomToImprint`** (`int`) — ngưỡng WIS tối thiểu để Imprint (GDD — Spells). Serialize trong Inspector dạng **PascalCase**.
 |Enemy Definition|`EN_`|`EN_TestMinion.asset`, `EN_FireBoss.asset`|
 |Equipment Definition|`EQ_`|`EQ_FlameWand_R1.asset`, `EQ_DragonFang_R3.asset`|
 |Rune Definition|`RU_`|`RU_FireEmbrace_R1.asset`, `RU_Combustion_R3.asset`|
-|Config SO|Tên mô tả, không prefix|`CombatConfig.asset`, `ArcConfig_1.asset`|
+|Config SO|Tên mô tả, không prefix|`CombatConfig.asset`, `Arc_1_Config.asset`, `RewardRateConfig.asset`|
 |EventChannelSO|Tên mô tả + `SO`|`CombatEndedSO.asset`, `GoldChangedSO.asset`|
 
 **Rank suffix (Equipment và Rune):**
@@ -664,7 +678,7 @@ RU_Combustion_R3.asset
 
 ```
 CLASS / STRUCT / INTERFACE / ENUM  → PascalCase
-  IEntity, StatModifier, EffectType, CombatEndedSO
+  IEntity, StatModifier, PotencyRef, TargetResolver, EffectType, CombatEndedSO
 
 METHOD (sync)                      → PascalCase
   TakeDamage(), ApplyArmor(), RecalculateBaseAttributes()
@@ -692,6 +706,16 @@ NAMESPACE                          → Game.[Layer].[Module]
   Core.Foundation.StateMachine
   Game.Logic.Combat
   Game.Unity.Bridges
+
+SCRIPTABLEOBJECT CLASS             → PascalCase + SO suffix
+  CombatConfigSO, ArcConfigSO, SpellDefinitionSO, EventConfigSO, CombatEndedSO
+
+SPELL EFFECT SUBTYPES              → PascalCase (extends SpellEffect)
+  DamageEffect, HealEffect, ArmorEffect, StatusEffect
+
+EVENT ACTION SUBTYPES              → PascalCase (extends EventAction)
+  GiveGoldAction, GiveAttributeAction, ForceCombatAction,
+  ApplyCombatModifierAction, OpenMiniShopAction, ...
 ```
 
 ### Asset — Prefix nhanh
@@ -715,21 +739,23 @@ Char_     → Character Sprite
 ### Folder — nhanh
 
 ```
-Scripts/Foundation/     → EventChannelSO, StateMachineManager, IState, IAsyncState
-Scripts/Logic/          → Pure C# (không UnityEngine)
-Scripts/Unity/Core/     → GameManagerDriver
-Scripts/Unity/Bridges/  → EventBridge adapters (relay C# event → SO)
-Scripts/Unity/          → MonoBehaviour, Unity-specific
-Scripts/Editor/         → Editor tools
-Data/Config/            → Config SO assets
-Data/Events/            → EventChannelSO assets
-Data/Spells/            → Spell SO (theo Rank)
-Data/Enemies/           → Enemy SO (theo loại)
-Data/Equipment/         → Equipment SO (theo Rank)
-Data/Runes/             → Rune SO (theo Rank)
-Tests/EditMode/         → NUnit, không cần scene
-Tests/PlayMode/         → UnityTest, cần runtime
-Resources/Config/       → SO cần Resources.Load() trong Edit Mode test
+Scripts/Core/Foundation/                → EventChannelSO, StateMachineManager, IState, IAsyncState
+Scripts/Game/Logic/                     → Pure C# (không UnityEngine)
+Scripts/Game/Unity/Core/                → GameManagerDriver
+Scripts/Game/Unity/Bridges/             → EventBridge adapters (relay C# event → SO)
+Scripts/Game/Unity/                     → MonoBehaviour, Unity-specific
+Scripts/Editor/                         → Editor tools
+Data/Config/Arc/                        → Arc config SO assets
+Data/Config/Combat/                     → CombatConfig, WisdomSlotConfig assets
+Data/Config/Progression/                → RewardRateConfig, ShopPriceConfig, EventConfig assets
+Data/Events/                            → EventChannelSO assets
+Data/Spells/                            → Spell SO (theo Rank)
+Data/Enemies/                           → Enemy SO (theo loại)
+Data/Equipment/                         → Equipment SO (theo Rank)
+Data/Runes/                             → Rune SO (theo Rank)
+Tests/EditMode/                         → NUnit, không cần scene
+Tests/PlayMode/                         → UnityTest, cần runtime
+Resources/                              → Chỉ SO cần Resources.Load() trong Edit Mode test
 ```
 
 ### Rank suffix (Equipment và Rune asset)

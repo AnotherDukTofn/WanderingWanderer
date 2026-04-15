@@ -1,77 +1,11 @@
 ___
-
 **Game:** Wandering Wanderer 
 **Author:** DukTofn 
-**Last Updated:** 09/04/2026 
+**Last Updated:** 12/04/2026 
+**Revision:** v3 — Architecture v6 (Typed SpellEffect system, PotencyRef, TargetResolver)
 ___
 
-## Mục lục
-- [Hướng dẫn đọc](#hướng-dẫn-đọc)
-- [Phase 0 — Project Setup & Foundation](#phase-0--project-setup--foundation)
-  - [TASK-001 — Khởi tạo project và folder structure](#task-001--khởi-tạo-project-và-folder-structure)
-  - [TASK-002 — Cài đặt packages: UniTask và DOTween](#task-002--cài-đặt-packages-unitask-và-dotween)
-  - [TASK-003 — Tạo ScriptableObject: CombatConfig](#task-003--tạo-scriptableobject-combatconfig)
-  - [TASK-004 — Tạo ScriptableObject: ArcConfig...](#task-004--tạo-scriptableobject-arcconfig-shoppriceconfig-rewardrateconfig-eventconfig-wisdomslotconfig)
-  - [TASK-005 — StatModifier struct và StatType enum](#task-005--statmodifier-struct-và-stattype-enum)
-  - [TASK-006 — Tạo SpellDefinition và data Rank I](#task-006--tạo-spelldefinition-và-data-rank-i)
-  - [TASK-007 — Tạo EnemyDefinition schema](#task-007--tạo-enemydefinition-schema)
-  - [TASK-008 — Tạo EquipmentDefinition và RuneDefinition schema](#task-008--tạo-equipmentdefinition-và-runedefinition-schema)
-  - [TASK-009 — Foundation Layer: EventChannelSO và StateMachineManager](#task-009--foundation-layer-eventchannelso-và-statemachinemanager)
-  - [TASK-010 — EventChannelSO assets cho cross-boundary events](#task-010--eventchannelso-assets-cho-cross-boundary-events)
-- [Phase 1 — Core Math (Pure Logic)](#phase-1--core-math-pure-logic)
-  - [TASK-020 — ArmorStack: implement và unit test](#task-020--armorstack-implement-và-unit-test)
-  - [TASK-021 — DamageCalculator: implement và unit test](#task-021--damagecalculator-implement-và-unit-test)
-  - [TASK-022 — HitDodgeResolver: implement và unit test](#task-022--hitdodgeresolver-implement-và-unit-test)
-  - [TASK-023 — PlayerController: HP/MP scaling và Stat Layering](#task-023--playercontroller-hpmp-scaling-và-stat-layering)
-  - [TASK-024 — PlayerController: Stat Layering với equipment/rune modifier](#task-024--playercontroller-stat-layering-với-equipmentrune-modifier)
-  - [TASK-025 — PlayerController: Dynamic getters (Layer 3)](#task-025--playercontroller-dynamic-getters-layer-3)
-- [Phase 2 — Effect System](#phase-2--effect-system)
-  - [TASK-030 — EffectSystem: apply và lookup](#task-030--effectsystem-apply-và-lookup)
-  - [TASK-031 — EffectSystem: element interaction](#task-031--effectsystem-element-interaction)
-  - [TASK-032 — EffectSystem: duration tick](#task-032--effectsystem-duration-tick)
-  - [TASK-033 — CombatResolver: CheckCombinations](#task-033--combatresolver-checkcombinations)
-  - [TASK-034 — CombatResolver: Detonates và Burn DoT](#task-034--combatresolver-detonates-và-burn-dot)
-- [Phase 3 — Spell Layer](#phase-3--spell-layer)
-  - [TASK-040 — SpellSlotManager: slot management](#task-040--spellslotmanager-slot-management)
-  - [TASK-041 — CooldownTracker: cooldown logic](#task-041--cooldowntracker-cooldown-logic)
-  - [TASK-042 — SpellCaster: validation pipeline](#task-042--spellcaster-validation-pipeline)
-  - [TASK-043 — SpellCaster: thực thi effect theo spell data](#task-043--spellcaster-thực-thi-effect-theo-spell-data)
-- [Phase 4 — Enemy AI](#phase-4--enemy-ai)
-  - [TASK-050 — CombatContext snapshot](#task-050--combatcontext-snapshot)
-  - [TASK-051 — SpellSelector và RandomPolicy](#task-051--spellselector-và-randompolicy)
-  - [TASK-052 — PriorityPolicy, WeightedRandomPolicy, ScriptedPolicy](#task-052--prioritypolicy-weightedrandompolicy-scriptedpolicy)
-- [Phase 5 — Turn System](#phase-5--turn-system)
-  - [TASK-060 — TurnManager: async combat loop với UniTask](#task-060--turnmanager-async-combat-loop-với-unitask)
-  - [TASK-061 — PhaseHandler: Start Phase resolve order](#task-061--phasehandler-start-phase-resolve-order)
-  - [TASK-062 — PhaseHandler: End Phase và cooldown](#task-062--phasehandler-end-phase-và-cooldown)
-- [Phase 6 — Presentation Layer (UniTask + DOTween)](#phase-6--presentation-layer-unitask--dotween)
-  - [TASK-070 — VisualQueue: DrainAsync với UniTask](#task-070--visualqueue-drainasync-với-unitask)
-  - [TASK-071 — TurnManager: await DrainAsync sau mỗi phase](#task-071--turnmanager-await-drainasync-sau-mỗi-phase)
-  - [TASK-072 — IActionCommand và các command cơ bản với DOTween](#task-072--iactioncommand-và-các-command-cơ-bản-với-dotween)
-  - [TASK-073 — ParallelCommand cho animation đồng thời](#task-073--parallelcommand-cho-animation-đồng-thời)
-- [Phase 7 — Passive Layer](#phase-7--passive-layer)
-  - [TASK-080 — EquipmentSystem: stat injection với StatModifier](#task-080--equipmentsystem-stat-injection-với-statmodifier)
-  - [TASK-081 — RuneSystem: embed, purge, lifecycle + StatModifier](#task-081--runesystem-embed-purge-lifecycle--statmodifier)
-- [Phase 8 — Foundation: StateMachine + EventBridge](#phase-8--foundation-statemachine--eventbridge)
-  - [TASK-090 — GameManager states và StateMachineManager](#task-090--gamemanager-states-và-statemachinemanager)
-  - [TASK-091 — GameManagerDriver MonoBehaviour](#task-091--gamemanagerdriver-monobehaviour)
-  - [TASK-092 — EventBridge MonoBehaviours](#task-092--eventbridge-monobehaviours)
-- [Phase 9 — Meta Layer](#phase-9--meta-layer)
-  - [TASK-100 — GoldLedger](#task-100--goldledger)
-  - [TASK-101 — RewardSystem, ShopSystem, EventSystem](#task-101--rewardsystem-shopsystem-eventsystem)
-- [Phase 10 — Map Layer](#phase-10--map-layer)
-  - [TASK-110 — MapSystem và NodeRouter](#task-110--mapsystem-và-noderouter)
-- [Phase 11 — SaveSystem](#phase-11--savesystem)
-  - [TASK-120 — GameManager state management và SaveSystem](#task-120--gamemanager-state-management-và-savesystem)
-- [Phase 12 — UI Layer](#phase-12--ui-layer)
-  - [TASK-130 — PlayerStatusView: HP/MP bar với DOTween](#task-130--playerstatusview-hpmp-bar-với-dotween)
-  - [TASK-131 — EffectView, SpellBarView, TurnIndicatorView](#task-131--effectview-spellbarview-turnindicatorview)
-  - [TASK-132 — MapGraphView và PendingModifierView](#task-132--mapgraphview-và-pendingmodifierview)
-- [Phase 13 — Integration](#phase-13--integration)
-  - [TASK-140 — Full combat loop: Player vs 1 Minion](#task-140--full-combat-loop-player-vs-1-minion)
-  - [TASK-141 — Full combat loop: Element combos](#task-141--full-combat-loop-element-combos)
-
----
+# TDD — Task Manager
 
 ## Hướng dẫn đọc
 
@@ -89,7 +23,7 @@ ___
 
 ## Phase 0 — Project Setup & Foundation
 
-### TASK-001 — Khởi tạo project và folder structure
+### TASK-001 — Khởi tạo project và folder structure `[x]`
 
 **Complexity:** S | **Depends:** —
 
@@ -101,18 +35,9 @@ ___
 - [x] `Logic.asmdef` không reference `UnityEngine` — compile thành công khi chạy batch compile
 - [x] `Foundation.asmdef` tách biệt khỏi `Logic` và `Unity` (xem TASK-009)
 
-**Task Notes:**
-
-| Subtask No. | Notes |
-| ----------- | ----- |
-| 1           | __    |
-| 2           | __    |
-| 3           | __    |
-| 4           | __    |
-| 5           | __    |
-
 ---
-### TASK-002 — Cài đặt packages: UniTask và DOTween
+
+### TASK-002 — Cài đặt packages: UniTask và DOTween `[x]`
 
 **Complexity:** S | **Depends:** TASK-001
 
@@ -123,18 +48,9 @@ ___
 - [x] UniTask DOTween integration enable: `using DG.Tweening;` + `.ToUniTask()` extension khả dụng trên `Tween`
 - [x] Test sanity: `await DOTween.To(() => 0f, x => {}, 1f, 0.5f).ToUniTask();` compile và chạy không lỗi trong Play Mode
 
-**Task Notes:**
-
-| Subtask No. | Notes                                                     |
-| ----------- | --------------------------------------------------------- |
-| 1           | __                                                        |
-| 2           | Trong script DOTweenBoostrap.cs (Scripts/Unity/Bootstrap) |
-| 3           | __                                                        |
-| 4           | __                                                        |
-
 ---
 
-### TASK-003 — Tạo ScriptableObject: `CombatConfig`
+### TASK-003 — Tạo ScriptableObject: `CombatConfig` `[x]`
 
 **Complexity:** S | **Depends:** TASK-001
 
@@ -144,18 +60,9 @@ ___
 - [x] Có thể chỉnh `HIT_THRESHOLD`, `BASE_DODGE`, `MAX_DODGE`, `BASE_MP_RECOVERY`, `HP_CAP`, `HP_HALF`, `MP_COEFF` trong Inspector
 - [x] Giá trị mặc định hợp lý được điền sẵn theo Combat Design doc
 
-**Task Notes:**
-
-| Subtask No. | Notes |
-| ----------- | ----- |
-| 1           | __    |
-| 2           | __    |
-| 3           | __    |
-
-
 ---
 
-### TASK-004 — Tạo ScriptableObject: `ArcConfig`, `ShopPriceConfig`, `RewardRateConfig`, `EventConfig`, `WisdomSlotConfig`
+### TASK-004 — Tạo ScriptableObject: `ArcConfig`, `ShopPriceConfig`, `RewardRateConfig`, `EventConfig`, `WisdomSlotConfig` `[~]`
 
 **Complexity:** S | **Depends:** TASK-001
 
@@ -164,60 +71,140 @@ ___
 - [x] 3 asset `ArcConfig_1/2/3` — mỗi asset có field: tổng Node, tỷ lệ NodeType, min path constraint, tỷ lệ Rank Shop
 - [x] `WisdomSlotConfig` có mảng 5 phần tử WIS threshold
 - [x] `RewardRateConfig` có bảng tỷ lệ Rank theo combatType × Arc (tổng mỗi dòng = 100%)
+- [ ] `ShopPriceConfig` có giá cố định theo Rank (Equipment/Spell/Rune), giá dịch vụ (Enlighten/Embed/Purge), giá Rune Socket (lũy tiến)
+- [ ] `EventConfig` có tỷ lệ từng Event, giá trị cụ thể (Gold amount, HP cost, Attribute bonus) cho mỗi Event trong pool
 - [x] Không có serialization error trong Inspector
 
 ---
 
-### TASK-005 — `StatModifier` struct và `StatType` enum
+### TASK-005 — `StatModifier` struct và `StatType` enum `[x]`
 
 **Complexity:** S | **Depends:** TASK-001
 
 **AC:**
 
 - [x] `StatModifier` struct nằm trong `Logic` assembly: `{ StatType stat, ModType modType, float value }`
-- [x] `ModType` enum: `Flat`, `PercentAdd`
-- [x] `StatType` enum đủ tất cả stat có thể modify: `POT, SPI, WIS, VIT, AGI, FirePotency, WaterPotency, IcePotency, LightningPotency, FireRes, WaterRes, IceRes, LightningRes, MaxHp, MaxMp, MpRecovery, AllPotency, AllResistance`
-- [x] Struct serialize được trong Unity Inspector (đánh dấu `[Serializable]`)
+- [x] `ModType` enum: `Flat`, `Percent`
+- [x] `StatType` enum đủ tất cả stat có thể modify: `POT, SPI, WIS, VIT, AGI, FirePot, WaterPot, IcePot, LightningPot, FireRes, WaterRes, IceRes, LightningRes, MaxHp, MaxMp, MpRecovery, AllPot, AllRes`
+- [x] Struct serialize được trong Unity Inspector (`[Serializable]`)
 - [x] **Edit Mode Test**: tạo vài `StatModifier`, đọc lại field đúng giá trị
 
 ---
 
-### TASK-006 — Tạo `SpellDefinition` và data Rank I
+### TASK-006 — Spell data type system: `PotencyRef`, `TargetResolver`, `SpellEffect` subtypes _(Cập nhật v3)_
 
 **Complexity:** M | **Depends:** TASK-001
 
-**AC:**
+Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Không có MonoBehaviour, không có Unity-specific code.
 
-- [ ] `SpellDefinition` ScriptableObject class có đủ field: `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, **`minWisdomToImprint`** (WIS tối thiểu để Imprint — GDD), `targetType`, `effects[]`
-- [ ] `EffectApplication` serializable: `effectType`, `valueFormula` (string), `condition` (nullable, `[SerializeReference]`)
-- [ ] 12 asset Rank I Spell tại `Assets/Data/Spells/RankI/`, naming đúng convention (`SP_Fireball.asset`...)
-- [ ] Mỗi asset điền đủ data theo GDD — Spells (Rank I), không field nào bỏ trống không hợp lý
+**AC — `IEntity` interface:**
+
+- [ ] `IEntity` interface nằm trong `Logic` assembly: `CurrentHp`, `MaxHp`, `HasEffect(EffectType)`, `GetEffectivePotency(Element)`, `GetEffectiveResistance(Element)`, `GetEffectiveAGI()`
+- [ ] Property mở rộng (`ArmorStack`, `EffectSystem`) bổ sung khi implement TASK-020, TASK-030
+
+**AC — `EffectType` enum:**
+
+- [ ] `EffectType` enum nằm trong `Logic` assembly, đủ value: `None, Burn, Drenched, Chilled, Dazed, Enrage, Refreshing, Fortified, Energized, Overdrive, Crystalize, Frozen, Regen, Distracted`
+
+**AC — `CombatState` class:**
+
+- [ ] `CombatState` nằm trong `Logic` assembly: `{ IEntity Player, IEntity[] AliveEnemies }`
+- [ ] Tạo mới mỗi lượt, read-only snapshot
+
+**AC — `PotencyRef` struct:**
+
+- [x] `PotencyRef` nằm trong `Logic` assembly: `{ Element element, float coefficient }`
+- [x] `[Serializable]` — serialize được trong Inspector
+- [x] **Edit Mode Test**: `coefficient = 0.8`, `GetValue(potency: 50f)` → `40f`
+
+**AC — `TargetResolver` struct:**
+
+- [x] `TargetResolveType` enum đủ 6 value: `Caster`, `SelectedEnemy`, `AllEnemies`, `RandomEnemies`, `LowestHpEnemies`, `SecondaryRandom`
+- [x] `TieBreaker` enum: `None`, `LowestResistance`
+- [x] `TargetResolver` struct: `{ TargetResolveType type, int targetCount, TieBreaker tieBreaker, Element tieBreakerElement }`
+- [x] `[Serializable]` — serialize được
+- [ ] `TargetResolver.Resolve(SpellCastContext, CombatState) → IEntity[]`:
+    - `Caster` → `[ context.Caster ]`
+    - `SelectedEnemy` → `[ context.SelectedEnemy ]`
+    - `AllEnemies` → tất cả alive enemies
+    - `RandomEnemies(n)` → n enemy ngẫu nhiên, không trùng
+    - `LowestHpEnemies(n)` → n enemy HP thấp nhất; tie → sort theo resistance theo `tieBreakerElement`
+    - `SecondaryRandom` → 1 enemy ngẫu nhiên **ngoại trừ** `context.SelectedEnemy`
+- [ ] **Edit Mode Test**:
+    - `AllEnemies` với 3 enemies → trả về cả 3
+    - `RandomEnemies(2)` với 4 enemies → trả về đúng 2, không trùng
+    - `LowestHpEnemies(2)` với tie → tie-break theo resistance đúng
+    - `SecondaryRandom` → không bao giờ trả về `context.SelectedEnemy`
+
+**AC — `SpellEffect` subtypes:**
+
+- [ ] Abstract `SpellEffect` base class: `{ TargetResolver targetResolver, SpellCondition? condition }`
+- [ ] 4 concrete subtype, đều `[Serializable]`:
+    - `DamageEffect : SpellEffect { PotencyRef potencyRef }`
+    - `HealEffect : SpellEffect { PotencyRef potencyRef }`
+    - `ArmorEffect : SpellEffect { PotencyRef potencyRef, int duration }`
+    - `StatusEffect : SpellEffect { EffectType effectType }`
+- [ ] `[SerializeReference]` trên field `SpellEffect[]` trong `SpellDefinition` — Inspector cho phép chọn subtype cụ thể
+
+**AC — `SpellCondition` subtypes:**
+
+- [ ] Abstract `SpellCondition` base class: `bool Evaluate(IEntity target, SpellCastContext context)`
+- [ ] 3 implementation: `TargetHasEffect { EffectType }`, `TargetHpBelow { float threshold }`, `CasterHasEffect { EffectType }`
+- [ ] **Edit Mode Test**: `TargetHasEffect(Burn).Evaluate(target)` đúng khi target có/không có Burn
+
+**AC — `SpellCastContext` class:**
+
+- [ ] `SpellCastContext { IEntity Caster, IEntity? SelectedEnemy, SpellDefinition Spell }`
+- [ ] `SelectedEnemy` có thể null (spell chỉ target Caster hoặc AllEnemies)
 
 ---
 
-### TASK-007 — Tạo `EnemyDefinition` schema
+### TASK-007 — `SpellDefinition` class và data Rank I
 
-**Complexity:** S | **Depends:** TASK-006
+**Complexity:** M | **Depends:** TASK-006
 
-**AC:**
+**AC — SO Class:**
 
-- [ ] `EnemyDefinition` ScriptableObject có đủ field theo Architecture doc
-- [ ] `decisionPolicyConfig` serialize được các subtype bằng `[SerializeReference]`
-- [ ] Tạo 1 enemy mẫu `EN_TestMinion` — `RandomPolicy`, 1 spell — không bị serialize error
+- [ ] `SpellDefinition : ScriptableObject` có field: `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, `minWisdomToImprint`
+- [ ] `effects: SpellEffect[]` dùng `[SerializeReference]` — Inspector hiển thị dropdown chọn subtype (`DamageEffect`, `HealEffect`, `ArmorEffect`, `StatusEffect`)
+- [ ] Tạo thành công `SpellDefinition` với `DamageEffect` + `StatusEffect` trong Inspector, không serialize error
+
+**AC — 12 asset Rank I:**
+
+- [ ] 12 file asset tại `Assets/Data/Spells/RankI/`, naming đúng: `SP_Fireball.asset`, `SP_Ignite.asset`...
+- [ ] Mỗi asset điền đúng theo bảng sau (coefficient `[TBD]` ghi placeholder):
+
+|Asset|Effects|Ghi chú|
+|---|---|---|
+|`SP_Fireball`|`DamageEffect(SelectedEnemy, Fire, c)` + `StatusEffect(SelectedEnemy, Burn)`||
+|`SP_Ignite`|`StatusEffect(SelectedEnemy, Burn)`|Xem GDD ghi chú về "burn damage increase"|
+|`SP_CandleGhost`|`DamageEffect(LowestHpEnemies n=3, tieBreaker=LowestResistance Fire, Fire, c)`||
+|`SP_Heal`|`HealEffect(Caster, Water, c)`||
+|`SP_Splash`|`DamageEffect(SelectedEnemy, Water, c)` + `StatusEffect(SelectedEnemy, Drenched)`||
+|`SP_Bubble`|`StatusEffect(SelectedEnemy, Frozen)`|Apply Frozen trực tiếp|
+|`SP_IceShard`|`DamageEffect(SelectedEnemy, Ice, c)` + `StatusEffect(SelectedEnemy, Chilled)`||
+|`SP_IceShield`|`ArmorEffect(Caster, Ice, c, duration=3)`||
+|`SP_ColdBreathe`|`DamageEffect(AllEnemies, Ice, c)`||
+|`SP_Shock`|`DamageEffect(SelectedEnemy, Lightning, c)` + `StatusEffect(SelectedEnemy, Dazed)`||
+|`SP_Spark`|`DamageEffect(SelectedEnemy, Lightning, c)` + `DamageEffect(SecondaryRandom, Lightning, c×0.5)`|Hai DamageEffect riêng|
+|`SP_Pulse`|`DamageEffect(RandomEnemies n=3, Lightning, c)`||
+
+- [ ] Không asset nào có field bỏ trống không hợp lý (coefficient TBD OK, type phải đúng)
 
 ---
 
-### TASK-008 — Tạo `EquipmentDefinition` và `RuneDefinition` schema
+### TASK-008 — Tạo `EnemyDefinition`, `EquipmentDefinition`, `RuneDefinition` schema
 
-**Complexity:** S | **Depends:** TASK-005
+**Complexity:** S | **Depends:** TASK-005, TASK-007
 
 **AC:**
 
-- [ ] `EquipmentDefinition` có field: `id`, `displayName`, `slot` (EquipmentSlot enum), `rank`, `modifiers: StatModifier[]`
-- [ ] `RuneDefinition` có field: `id`, `displayName`, `rank`, `passiveType` (StatModifier/ConditionalTrigger/TurnHook), `statModifiers: StatModifier[]`, `passiveConfig` (`[SerializeReference]`)
-- [ ] Tạo 1 equipment mẫu Rank I (1 modifier flat) — không serialize error
-- [ ] Tạo 1 equipment mẫu Rank II (flat MaxHp + flat VIT) — `Garb_IronRobe` — không serialize error
-- [ ] Tạo 1 rune mẫu `StatModifier` type — `Rune_FireEmbrace` — không serialize error
+- [ ] `EnemyDefinition` ScriptableObject có đủ field theo Architecture doc; `decisionPolicyConfig` serialize bằng `[SerializeReference]`
+- [ ] Tạo `EN_TestMinion` — `RandomPolicy`, gán `SP_Fireball` — không bị serialize error
+- [ ] `EquipmentDefinition` có field: `id`, `displayName`, `slot` (`EquipmentSlot` enum), `rank`, `modifiers: StatModifier[]`
+- [ ] `RuneDefinition` có field: `id`, `displayName`, `rank`, `passiveType`, `statModifiers: StatModifier[]`, `passiveConfig` (`[SerializeReference]`)
+- [ ] Tạo `EQ_FlameWand_R1` (1 flat POT), `EQ_IronRobe_R2` (flat VIT + flat MaxHp) — không serialize error
+- [ ] Tạo `RU_FireEmbrace_R1` (StatModifier type, flat FirePotency) — không serialize error
 
 ---
 
@@ -225,15 +212,13 @@ ___
 
 **Complexity:** S | **Depends:** TASK-001
 
-Đưa code `EventChannelSO`, `EventListener`, `IState`, `StateMachineManager` vào project đúng namespace và assembly.
-
 **AC:**
 
-- [ ] `Core.Foundation.Events.SinglePayloadEvent` và `Core.Foundation.Events.TwoPayloadEvent` namespace tồn tại
+- [ ] `Core.Foundation.Events.SinglePayloadEvent` và `TwoPayloadEvent` namespace tồn tại
 - [ ] `Core.Foundation.StateMachine` namespace tồn tại với `IState`, `StateMachineManager`
-- [ ] `Foundation.asmdef` không reference `Logic.asmdef` hoặc `Unity.asmdef` (utility thuần)
+- [ ] `Foundation.asmdef` không reference `Logic.asmdef` hoặc `Unity.asmdef`
 - [ ] `IAsyncState` interface tồn tại — extend `IState` với `UniTask EnterAsync()`
-- [ ] `StateMachineManager.SetState()` detect `IAsyncState` và gọi `EnterAsync()` thay vì `Enter()`
+- [ ] `StateMachineManager.SetState()` detect `IAsyncState` → gọi `EnterAsync()` thay vì `Enter()`
 - [ ] Compile không lỗi toàn bộ project
 
 ---
@@ -244,14 +229,9 @@ ___
 
 **AC:**
 
-- [ ] 5 SO asset tại `Assets/Data/Events/`:
-    - `CombatEndedSO.asset` — payload: `CombatResult`
-    - `NodeEnteredSO.asset` — payload: `NodeType`
-    - `GoldChangedSO.asset` — payload: `int`
-    - `PendingModifierChangedSO.asset` — payload: `CombatModifier?`
-    - `RewardReadySO.asset` — payload: `RewardOffer`
+- [ ] 5 SO asset tại `Assets/Data/Events/`: `CombatEndedSO`, `NodeEnteredSO`, `GoldChangedSO`, `PendingModifierChangedSO`, `RewardReadySO`
 - [ ] Mỗi SO là concrete class extend đúng `EventChannelSO<T>` generic base
-- [ ] `RaiseEvent()` và `AddListener()` / `RemoveListener()` gọi được từ Inspector và code
+- [ ] `RaiseEvent()`, `AddListener()`, `RemoveListener()` gọi được từ code
 
 ---
 
@@ -308,11 +288,10 @@ ___
 
 **AC:**
 
-- [ ] VIT = 10 → `storedMaxHp = 100` (công thức `1000 × VIT / (VIT + 90)` — L0 thuần, không có L1 flat)
-- [ ] VIT = 10, flat MaxHp modifier +50 → `storedMaxHp = 150` (L0 + L1)
+- [ ] VIT = 10 → `storedMaxHp = 100`; VIT = 10 + flat MaxHp +50 → `storedMaxHp = 150`
 - [ ] SPI = 10 → `storedMaxMp = 100`; `storedMpRecovery = BASE_MP_RECOVERY + 10`
 - [ ] `RecalculateBaseAttributes()` thứ tự đúng: collect → main attr → potency (L0+L1+L2) → resist → HP/MP → recovery
-- [ ] Sau `RecalculateBaseAttributes()`: `maxHp` và `maxMp` alias đúng `storedMaxHp`/`storedMaxMp`
+- [ ] `maxHp` và `maxMp` alias đúng `storedMaxHp`/`storedMaxMp`
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -323,13 +302,12 @@ ___
 
 **AC:**
 
-- [ ] Equip 1 item `{ stat: POT, modType: Flat, value: 8 }` → `POT` tăng 8
-- [ ] Equip item `{ stat: FirePotency, modType: Flat, value: 15 }` → `storedFirePotency = L0 + 15`
-- [ ] Equip item `{ stat: FirePotency, modType: PercentAdd, value: 0.10 }` → `storedFirePotency = (L0 + L1) × 1.10`
-- [ ] Stacking: flat +15 + percent +10% → `(L0 + 15) × 1.10` (đúng thứ tự L1 trước L2)
-- [ ] `{ stat: AllPotency, modType: Flat, value: 10 }` → cả 4 `storedXPotency` đều tăng 10
-- [ ] `{ stat: MaxHp, modType: Flat, value: 50 }` → `storedMaxHp = formulaResult + 50`
-- [ ] Unequip item → `RecalculateBaseAttributes()` → về giá trị gốc
+- [ ] Flat POT +8 → `POT` tăng 8; flat FirePot +15 → `storedFirePotency = L0 + 15`
+- [ ] Percent FirePot +10% → `storedFirePotency = (L0 + L1) × 1.10`
+- [ ] Stacking flat +15 + percent +10% → `(L0 + 15) × 1.10` (L1 trước L2)
+- [ ] `AllPot` modifier → cả 4 nguyên tố tăng
+- [ ] `MaxHp` flat → `storedMaxHp = L0_formula + flat`
+- [ ] Unequip → về giá trị gốc
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -340,14 +318,12 @@ ___
 
 **AC:**
 
-- [ ] Không có effect: `GetEffectivePotency()` = `storedXPotency`
-- [ ] Enrage: `GetEffectivePotency()` = `stored × 1.15`
-- [ ] Drenched: `GetEffectivePotency()` = `stored × 0.90`
-- [ ] Enrage + Drenched: `stored × 1.05` (cộng multiplier, không nhân liên tiếp)
-- [ ] Overdrive: `stored × 1.30` (Enrage + Overdrive stacking)
-- [ ] `GetEffectiveAGI()`: Overdrive → `float.PositiveInfinity`; Energized → `AGI × 1.30`; Chilled → `AGI × 0.70`
+- [ ] Không effect: `GetEffectivePotency()` = `storedXPotency`
+- [ ] Enrage: `stored × 1.15`; Drenched: `stored × 0.90`; Enrage + Drenched: `stored × 1.05`
+- [ ] Overdrive: `stored × 1.50`
+- [ ] `GetEffectiveAGI()`: Overdrive → `float.PositiveInfinity`; Energized × 1.30; Chilled × 0.70
 - [ ] `GetEffectiveResistance()`: Fortified +15%, Dazed -15%
-- [ ] L3 effect hoàn toàn tách biệt L0–L2 — thay đổi equipment không ảnh hưởng L3 và ngược lại
+- [ ] L3 tách biệt hoàn toàn L0–L2
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -360,12 +336,10 @@ ___
 
 **AC:**
 
-- [ ] `Apply(EffectType)` thêm effect vào `activeEffects` Dictionary
-- [ ] `Has(EffectType)` → `true` khi active
+- [ ] `Apply(EffectType)` thêm vào `activeEffects` Dictionary
+- [ ] `Has(EffectType)` → `true` khi active; `Remove()` → `false`
 - [ ] Apply cùng loại (non-stackable): Refresh duration, `Count` không tăng
-- [ ] `Remove(EffectType)` → `Has()` trả `false`
-- [ ] `OnEffectApplied` C# event phát khi apply thành công
-- [ ] `OnEffectRemoved` C# event phát khi remove
+- [ ] `OnEffectApplied` và `OnEffectRemoved` C# event phát đúng lúc
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -376,12 +350,12 @@ ___
 
 **AC:**
 
-- [ ] Water > Fire: apply Burn khi có Drenched → Burn bị giải, Drenched giữ
-- [ ] Water > Fire: apply Drenched khi có Burn → Burn bị giải, Drenched apply
-- [ ] Cùng nguyên tố, khác loại (Enrage + Burn): Neutralize cả hai, `activeEffects` trống
-- [ ] Cùng nguyên tố, cùng loại (Burn + Burn): Refresh duration, count vẫn 1
+- [ ] Water > Fire: apply Burn khi có Drenched → Burn giải, Drenched giữ
+- [ ] Water > Fire: apply Drenched khi có Burn → Burn giải, Drenched apply
+- [ ] Cùng nguyên tố, khác loại (Enrage + Burn): Neutralize cả hai
+- [ ] Cùng nguyên tố, cùng loại (Burn + Burn): Refresh, count = 1
 - [ ] `OnEffectApplied` **không** phát khi Abort
-- [ ] **Edit Mode Test pass** cho tất cả case
+- [ ] **Edit Mode Test pass**
 
 ---
 
@@ -391,10 +365,8 @@ ___
 
 **AC:**
 
-- [ ] `duration = 2` → sau 2 lần `Tick()` bị xóa
-- [ ] `duration = -1` (sentinel ∞) → không bị xóa
+- [ ] `duration = 2` → sau 2 lần `Tick()` bị xóa; sentinel `duration = -1` → không bị xóa
 - [ ] `OnEffectRemoved` phát khi expire do Tick
-- [ ] `duration = 1` → xóa sau đúng 1 lần Tick
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -405,12 +377,10 @@ ___
 
 **AC:**
 
-- [ ] Enrage + Energized → `EffectSystem.Apply(Overdrive)` gọi
-- [ ] Refreshing + Fortified → `EffectSystem.Apply(Crystalize)` gọi
-- [ ] Drenched + Chilled → `EffectSystem.Apply(Frozen)` gọi
-- [ ] Burn + Dazed → `OnCombinationTriggered(Detonates)` event phát
+- [ ] Enrage + Energized → `Apply(Overdrive)`, remove Enrage + Energized; Refreshing + Fortified → `Apply(Crystalize)`, remove Refreshing + Fortified
+- [ ] Drenched + Chilled → `Apply(Frozen)`, remove Drenched + Chilled; Burn + Dazed → `OnCombinationTriggered(Detonates)`, remove Burn + Dazed
 - [ ] Chỉ 1 trong 2 effect → không trigger
-- [ ] Idempotent: gọi `CheckCombinations` nhiều lần liên tiếp → combo chỉ trigger 1 lần
+- [ ] Idempotent: gọi nhiều lần liên tiếp → trigger chỉ 1 lần
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -421,12 +391,9 @@ ___
 
 **AC:**
 
-- [ ] Detonates: target nhận đúng `30% × maxHp`
-- [ ] Detonates: ignoreResistance=true (không giảm bởi fire_res)
-- [ ] Detonates: ignoreArmor=true (bypass ArmorStack, trừ thẳng HP)
-- [ ] Detonates khi Crystalize flag: vẫn gây damage (Crystalize không block Detonates)
-- [ ] Burn DoT: `10% × maxHp` giảm bởi fire_res
-- [ ] Burn DoT khi Crystalize flag: damage = 0
+- [ ] Detonates: `30% × maxHp`, ignoreResistance, ignoreArmor
+- [ ] Detonates khi Crystalize flag: vẫn gây damage
+- [ ] Burn DoT: `10% × maxHp` giảm bởi fire_res; = 0 khi Crystalize flag
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -439,13 +406,10 @@ ___
 
 **AC:**
 
-- [ ] Bắt đầu với `openSlots = 1`
-- [ ] `Imprint(spell)` vào slot trống → `IsImprinted(spell) = true`
-- [ ] `Forget(spell)` → slot trống, `IsImprinted = false`
-- [ ] `Imprint` vào slot chưa mở → thất bại (`ImprintResult.SlotLocked` hoặc tương đương)
-- [ ] `Imprint` khi `player.WIS < spell.minWisdomToImprint` → thất bại (`ImprintResult.NotEnoughWisdom`)
-- [ ] `UnlockSlot()` → slot mới mở, có thể Imprint
-- [ ] Số slot mở dựa đúng theo `WisdomSlotConfig` threshold (độc lập với ngưỡng Imprint từng spell)
+- [ ] Bắt đầu `openSlots = 1`; `Imprint` vào slot trống → `IsImprinted = true`
+- [ ] `Imprint` khi `player.WIS < spell.minWisdomToImprint` → thất bại
+- [ ] `Forget` → slot trống; `Imprint` vào slot chưa mở → thất bại
+- [ ] `UnlockSlot()` → slot mới mở; số slot dựa đúng `WisdomSlotConfig`
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -456,7 +420,6 @@ ___
 
 **AC:**
 
-- [ ] `GetCooldown(spellId)` trả 0 cho spell chưa cast
 - [ ] `Set(spellId, 3)` → `GetCooldown` = 3; sau 3 lần `Tick()` → 0
 - [ ] `OnCooldownChanged` event phát sau mỗi `Tick()` khi cooldown > 0
 - [ ] Nhiều spell tracking độc lập
@@ -464,9 +427,9 @@ ___
 
 ---
 
-### TASK-042 — `SpellCaster`: validation pipeline
+### TASK-042 — `SpellCaster`: validation pipeline và `SpellCastContext` _(Cập nhật v3)_
 
-**Complexity:** M | **Depends:** TASK-040, TASK-041, TASK-025
+**Complexity:** M | **Depends:** TASK-040, TASK-041, TASK-025, TASK-006
 
 **AC:**
 
@@ -474,42 +437,99 @@ ___
 - [ ] Đang cooldown → `CastResult.SpellOnCooldown`
 - [ ] Không đủ MP → `CastResult.NotEnoughMp`
 - [ ] Không phải Action Phase → `CastResult.NotYourTurn`
+- [ ] Spell có `SelectedEnemy` effect nhưng `selectedEnemy = null` → `CastResult.NoTargetSelected`
 - [ ] Tất cả thỏa → `CastResult.Success`
-- [ ] Miss: MP không trừ, cooldown không set
-- [ ] Success: MP trừ đúng cost, cooldown set đúng `baseCooldown`
 - [ ] Distracted: `cost = base × 1.15` (làm tròn lên)
-- [ ] **Edit Mode Test pass**
+- [ ] `SpellCastContext` được tạo đúng với `Caster`, `SelectedEnemy`, `Spell`
+- [ ] **Edit Mode Test pass** cho tất cả path
 
 ---
 
-### TASK-043 — `SpellCaster`: thực thi effect theo spell data
+### TASK-043 — `SpellCaster`: hit/dodge theo target type _(Cập nhật v3)_
 
-**Complexity:** M | **Depends:** TASK-042, TASK-033
+**Complexity:** M | **Depends:** TASK-042, TASK-022
 
 **AC:**
 
-- [ ] Spell có damage: `DamageCalculator` gọi với đúng potency và element
-- [ ] Spell buff lên Self: `EffectSystem(player).Apply()` gọi
-- [ ] Spell debuff lên enemy: `EffectSystem(enemy).Apply()` gọi
-- [ ] `targetType = AllEnemies`: tất cả enemy nhận damage/effect
-- [ ] `targetType = Random(n)`: đúng n enemy ngẫu nhiên
-- [ ] Sau apply effect → `CombatResolver.CheckCombinations()` gọi
-- [ ] **Edit Mode Test pass** (dùng StubEntity)
+- [ ] Spell có bất kỳ `DamageEffect { SelectedEnemy }` → check hit/dodge **1 lần duy nhất** trước khi execute effects
+- [ ] Miss với SelectedEnemy → abort toàn bộ spell, MP và cooldown vẫn tiêu, `PlayMissAnim` enqueue
+- [ ] `DamageEffect { AllEnemies }` → check hit/dodge **per enemy**; enemy dodge được bỏ qua, không abort toàn bộ
+- [ ] `DamageEffect { RandomEnemies(n) }` → check hit/dodge per enemy; enemy dodge được skip, target pool không bị refill
+- [ ] `DamageEffect { LowestHpEnemies(n) }` → check hit/dodge per enemy
+- [ ] `DamageEffect { SecondaryRandom }` → **không** check hit/dodge (splash, không phải đòn riêng)
+- [ ] `HealEffect`, `ArmorEffect`, `StatusEffect` → không check hit/dodge bất kể target type
+- [ ] **Edit Mode Test pass** cho tất cả rule
+
+---
+
+### TASK-044 — `SpellCaster`: thực thi typed SpellEffect _(Thêm mới v3)_
+
+**Complexity:** M | **Depends:** TASK-043, TASK-033, TASK-006
+
+**AC:**
+
+- [ ] `DamageEffect`: `raw = caster.GetEffectivePotency(potencyRef.element) × potencyRef.coefficient` → `DamageCalculator.Calculate(raw, target, element)` → armor chain → HP
+- [ ] `HealEffect`: `amount = caster.GetEffectivePotency(element) × coefficient` → `target.currentHp += amount` (capped tại `StoredMaxHp`)
+- [ ] `ArmorEffect`: `value = caster.GetEffectivePotency(element) × coefficient` → `target.armorStack.ApplyArmor(value, duration)`
+- [ ] `StatusEffect`: `target.effectSystem.Apply(effectType)` → `CombatResolver.CheckCombinations(target)` ngay sau đó
+- [ ] `StatusEffect { Frozen }` (từ Bubble): apply bình thường qua `EffectSystem`, không yêu cầu combo prerequisite
+- [ ] `effect.condition != null` và `condition.Evaluate(target, context) = false` → skip effect, không execute
+- [ ] Mỗi effect fire visual command tương ứng vào `VisualQueue` (xem Phase 6)
+- [ ] **Edit Mode Test pass** với StubEntity cho tất cả subtype
+
+---
+
+### TASK-045 — `SpellCaster`: verify end-to-end với Rank I spell data _(Thêm mới v3)_
+
+**Complexity:** S | **Depends:** TASK-044, TASK-007
+
+**AC — Fireball (DamageEffect + StatusEffect, SelectedEnemy):**
+
+- [ ] Cast Fireball lên enemy → enemy nhận damage đúng `potency × coefficient`, enemy có Burn
+- [ ] Miss → không damage, không Burn, MP tiêu
+
+**AC — Spark (DamageEffect SelectedEnemy + DamageEffect SecondaryRandom):**
+
+- [ ] Cast Spark lên Enemy A khi có Enemy B → A nhận damage đúng, B nhận damage 50% của A
+- [ ] B không check hit/dodge
+- [ ] Chỉ có 1 enemy → `SecondaryRandom` resolve → empty list → không có secondary damage
+
+**AC — CandleGhost (LowestHpEnemies n=3, tieBreaker LowestResistance Fire):**
+
+- [ ] 3 enemies, 2 HP bằng nhau → cả 3 nhận damage; khi tie → chọn đúng theo fire_res thấp hơn
+- [ ] Chỉ có 2 enemies → chỉ 2 target, không error
+
+**AC — IceShield (ArmorEffect, Caster):**
+
+- [ ] Cast IceShield → player có Armor stack mới với đúng value và duration 3
+
+**AC — Bubble (StatusEffect Frozen, SelectedEnemy):**
+
+- [ ] Cast Bubble lên enemy → enemy có Frozen; không yêu cầu Drenched + Chilled trước
+- [ ] Enemy có Frozen → lượt tiếp theo skip Action Phase
+
+**AC — Heal (HealEffect, Caster):**
+
+- [ ] Cast Heal khi HP thiếu → HP tăng đúng amount
+    
+- [ ] HP đã đầy → HP không vượt `StoredMaxHp`
+    
+- [ ] **Edit Mode Test pass** cho tất cả case
+    
 
 ---
 
 ## Phase 4 — Enemy AI
 
-### TASK-050 — `CombatContext` snapshot
+### TASK-050 — `CombatContext` snapshot (AI) và `SpellCastContext` resolve
 
-**Complexity:** S | **Depends:** TASK-023, TASK-032
+**Complexity:** S | **Depends:** TASK-023, TASK-032, TASK-006
 
 **AC:**
 
-- [ ] `CombatContext` tạo được từ PlayerController và EnemyController
-- [ ] `playerHpPercent`, `selfHpPercent` tính đúng
-- [ ] `playerActiveEffects` là read-only snapshot
-- [ ] Thay đổi state sau khi tạo context → không ảnh hưởng giá trị trong context
+- [ ] `CombatContext` (AI): tạo từ PlayerController và EnemyController; `playerHpPercent`, `selfHpPercent` đúng; snapshot bất biến
+- [ ] `SpellCastContext`: `Caster`, `SelectedEnemy`, `Spell` đúng khi tạo
+- [ ] `TargetResolver.Resolve(SpellCastContext, CombatState)` đã test ở TASK-006 — verify integration ở đây với real entity
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -520,9 +540,8 @@ ___
 
 **AC:**
 
-- [ ] `SpellSelector`: spell cooldown = 0 → xuất hiện; cooldown > 0 → không xuất hiện
-- [ ] `RandomPolicy.SelectSpell(available, context)` → trả 1 spell trong `available`
-- [ ] Statistical test n=1000: tất cả spell trong list được chọn ít nhất 1 lần
+- [ ] `SpellSelector`: spell cooldown = 0 → available; cooldown > 0 → không
+- [ ] `RandomPolicy`: trả 1 spell trong available; statistical n=1000: tất cả spell được chọn
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -533,12 +552,10 @@ ___
 
 **AC:**
 
-- [ ] `PriorityPolicy`: `PlayerHas(Burn)` — chọn spell khi player bị Burn, bỏ qua khi không
-- [ ] `PriorityPolicy`: `PlayerHpBelow(0.3f)` — chọn khi player HP < 30%
-- [ ] `PriorityPolicy`: priority cao check trước; spell on cooldown → skip sang rule tiếp theo
-- [ ] `PriorityPolicy`: không rule nào thỏa → fallback Random
-- [ ] `WeightedRandomPolicy`: weight cao → xác suất cao (statistical n=1000); weight 0 → không bao giờ chọn
-- [ ] `ScriptedPolicy`: lần lượt theo sequence; spell on cooldown → skip, không block
+- [ ] `PriorityPolicy`: `PlayerHas(Burn)`, `PlayerHpBelow(0.3f)` — chọn đúng theo condition
+- [ ] Priority cao check trước; spell on cooldown → skip sang rule kế; không rule thỏa → fallback Random
+- [ ] `WeightedRandomPolicy`: weight cao → xác suất cao (n=1000); weight 0 → không bao giờ chọn
+- [ ] `ScriptedPolicy`: lần lượt sequence; spell on cooldown → skip, không block
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -551,43 +568,26 @@ ___
 
 **AC:**
 
-- [ ] `StartCombatAsync(CancellationToken ct)` là `async UniTask`, không phải Coroutine
+- [ ] `StartCombatAsync(CancellationToken ct)` là `async UniTask`, không Coroutine
 - [ ] Phase order: Player (Start→Action→End) → Enemy (Start→Action→End) → lặp
-- [ ] Win: tất cả enemy HP ≤ 0 → loop kết thúc → `OnCombatEnded(Win)` C# event phát
-- [ ] Lose: player HP ≤ 0 → loop kết thúc → `OnCombatEnded(Lose)` C# event phát
-- [ ] `OnPhaseChanged` event phát tại đầu mỗi phase
-- [ ] `ct.Cancel()` từ bên ngoài → loop dừng sạch, không throw unhandled exception
+- [ ] Win/Lose: `OnCombatEnded` C# event phát đúng
+- [ ] `ct.Cancel()` → loop dừng sạch
 - [ ] Không có `IEnumerator` hay `StartCoroutine` trong `TurnManager`
-- [ ] **Play Mode Test** trong TestCombatScene
+- [ ] **Play Mode Test**
 
 ---
 
-### TASK-061 — `PhaseHandler`: Start Phase resolve order
+### TASK-061 — `PhaseHandler`: Start Phase và End Phase resolve order
 
 **Complexity:** M | **Depends:** TASK-034, TASK-060
 
 **AC:**
 
-- [ ] MP Recovery xảy ra bước 1 (trước mọi damage)
-- [ ] Frozen check bước 2: Action Phase bị skip đúng 1 lượt, Frozen giải
-- [ ] Crystalize flag bật bước 3 (trước Burn bước 5)
-- [ ] Regen (bước 4) xảy ra trước Burn (bước 5) — verify bằng HP log order
-- [ ] Burn bỏ qua khi Crystalize flag đang bật
-- [ ] Combination check (bước 7) xảy ra sau tất cả status resolve
+- [ ] MP Recovery bước 1; Frozen check bước 2 (skip Action Phase đúng 1 lượt); Crystalize flag bật bước 3
+- [ ] Regen bước 4 trước Burn bước 5; Burn bỏ qua khi Crystalize flag
+- [ ] Combination check bước 7 sau tất cả status
+- [ ] End Phase: effect duration -1 → xóa; armor duration -1 → xóa; spell cooldown -1 (không âm)
 - [ ] **Play Mode Test**: scenario cụ thể từng bước
-
----
-
-### TASK-062 — `PhaseHandler`: End Phase và cooldown
-
-**Complexity:** S | **Depends:** TASK-061
-
-**AC:**
-
-- [ ] Effect duration giảm 1, hết duration bị xóa sau End Phase
-- [ ] Armor stack duration giảm 1, hết duration bị xóa sau End Phase
-- [ ] Spell cooldown giảm 1, không giảm xuống dưới 0
-- [ ] **Edit Mode Test + Play Mode Test**
 
 ---
 
@@ -595,16 +595,14 @@ ___
 
 ### TASK-070 — `VisualQueue`: DrainAsync với UniTask
 
-**Complexity:** M | **Depends:** TASK-002, TASK-001
+**Complexity:** M | **Depends:** TASK-002
 
 **AC:**
 
-- [ ] `VisualQueue` là MonoBehaviour, không dùng Coroutine
-- [ ] `Enqueue(IActionCommand)` thêm vào Queue
-- [ ] `DrainAsync(CancellationToken)` là `async UniTask` — execute tuần tự đến khi queue rỗng
+- [ ] `VisualQueue` là MonoBehaviour; `DrainAsync(ct)` là `async UniTask`
 - [ ] Không có `OnQueueDrained` event — caller `await DrainAsync()` trực tiếp
-- [ ] `ct.Cancel()` trong khi drain → command hiện tại bị cancel, drain dừng sạch
-- [ ] **Play Mode Test** với mock command `WaitCommand(0.1f)`
+- [ ] `ct.Cancel()` → drain dừng sạch
+- [ ] **Play Mode Test** với `WaitCommand(0.1f)`
 
 ---
 
@@ -614,10 +612,8 @@ ___
 
 **AC:**
 
-- [ ] Sau mỗi `RunPhaseAsync()` → `await visualQueue.DrainAsync(ct)` trước khi phase tiếp theo
-- [ ] Phase chỉ chuyển SAU khi `DrainAsync` hoàn thành
-- [ ] VisualQueue empty → `DrainAsync` return ngay (không đợi không cần thiết)
-- [ ] **Play Mode Test**: verify timing bằng `Time.time` log
+- [ ] Phase chỉ chuyển SAU khi `DrainAsync` hoàn thành; queue empty → return ngay
+- [ ] **Play Mode Test**: verify timing
 
 ---
 
@@ -627,28 +623,28 @@ ___
 
 **AC:**
 
-- [ ] `IActionCommand` interface: `UniTask ExecuteAsync(CancellationToken ct = default)` — **không** có `IEnumerator`
-- [ ] `ShowDamageNumberCommand`: floating text với số damage, DOTween fade out sau 1 giây — `await` xong mới return
-- [ ] `ShowHpGainCommand`: floating text màu xanh, DOTween fade
-- [ ] `PlayDamageAnimCommand`: `transform.DOShakePosition(...).ToUniTask(ct)` — đợi shake xong
-- [ ] `PlayDeathAnimCommand`: `transform.DOScale(0, 0.3f).ToUniTask(ct)` rồi deactivate
-- [ ] `PlayEffectApplyAnimCommand`: Instantiate VFX prefab, await duration, Destroy
-- [ ] Mỗi command khi `ct` cancel → tween bị `.Kill()`, không để orphan tween
+- [ ] `IActionCommand`: `UniTask ExecuteAsync(CancellationToken ct = default)` — không `IEnumerator`
+- [ ] `ShowDamageNumberCommand`: floating text, DOTween fade — `await` xong mới return
+- [ ] `ShowHpGainCommand`: màu xanh, DOTween fade
+- [ ] `PlayDamageAnimCommand`: `DOShakePosition.ToUniTask(ct)`
+- [ ] `PlayDeathAnimCommand`: `DOScale(0).ToUniTask(ct)` → deactivate
+- [ ] `PlayEffectApplyAnimCommand`: Instantiate VFX, await duration, Destroy
+- [ ] `PlayArmorAnimCommand`: VFX shield apply
+- [ ] `PlayMissAnimCommand`: miss indicator
+- [ ] Tất cả: `ct` cancel → tween `.Kill()`, không orphan
 - [ ] **Play Mode Test**: sequence 3 command, verify thứ tự và timing
 
 ---
 
-### TASK-073 — `ParallelCommand` cho animation đồng thời
+### TASK-073 — `ParallelCommand`
 
 **Complexity:** S | **Depends:** TASK-072
 
 **AC:**
 
-- [ ] `ParallelCommand(params IActionCommand[] cmds)` — `ExecuteAsync` dùng `UniTask.WhenAll()`
-- [ ] Tất cả command trong parallel hoàn thành trước khi `ExecuteAsync` return
-- [ ] Một command trong parallel cancel → tất cả còn lại cũng được cancel
-- [ ] Dùng để: Detonates VFX + ShowDamageNumber cùng lúc
-- [ ] **Play Mode Test** với 2 WaitCommand có thời gian khác nhau — verify kết thúc đúng lúc cái lâu hơn
+- [ ] `ParallelCommand(params IActionCommand[])` — `ExecuteAsync` dùng `UniTask.WhenAll()`
+- [ ] Tất cả hoàn thành trước khi return; 1 cancel → tất cả cancel
+- [ ] **Play Mode Test**: 2 WaitCommand thời gian khác nhau — kết thúc đúng lúc cái lâu hơn
 
 ---
 
@@ -660,28 +656,23 @@ ___
 
 **AC:**
 
-- [ ] `EquipmentSystem.GetAllModifiers()` → `StatModifier[]` từ tất cả equipped item
-- [ ] Equip item Rank II có 2 modifier → cả 2 apply vào `RecalculateBaseAttributes()`
-- [ ] Equip/unequip → `RecalculateBaseAttributes()` tự gọi
-- [ ] Equip vào slot đã có → item cũ replace, stat cập nhật đúng
-- [ ] `{ stat: AllPotency }` modifier → cả 4 nguyên tố potency tăng
+- [ ] `GetAllModifiers()` → `StatModifier[]` từ tất cả equipped item
+- [ ] Equip/unequip → `RecalculateBaseAttributes()` tự gọi; `AllPotency` → cả 4 nguyên tố tăng
 - [ ] **Edit Mode Test pass**
 
 ---
 
-### TASK-081 — `RuneSystem`: embed, purge, lifecycle + StatModifier
+### TASK-081 — `RuneSystem`: embed, purge, lifecycle
 
 **Complexity:** M | **Depends:** TASK-080, TASK-032
 
 **AC:**
 
-- [ ] `Embed(rune, socketIndex)` → `IRunePassive.OnEmbed(player)` gọi
-- [ ] `Purge(socketIndex)` → `IRunePassive.OnPurge(player)` gọi **trước** khi xóa rune
-- [ ] Rune `passiveType = StatModifier`: `RuneSystem.GetAllStatModifiers()` trả modifier đúng → vào `RecalculateBaseAttributes()`
-- [ ] Rune `passiveType = ConditionalTrigger`: sau Embed → callback đăng ký trong `EffectSystem.OnEffectApplied`
-- [ ] Rune `passiveType = ConditionalTrigger`: sau Purge → callback bị xóa
-- [ ] Verify no memory leak: `EffectSystem.OnEffectApplied.GetInvocationList()` không còn rune callback sau Purge
-- [ ] Embed vào socket đã có rune → thất bại
+- [ ] `Embed` → `OnEmbed(player)` gọi; `Purge` → `OnPurge(player)` gọi **trước** khi xóa
+- [ ] `StatModifier` rune: `GetAllStatModifiers()` → vào `RecalculateBaseAttributes()`
+- [ ] `ConditionalTrigger` rune: sau Purge → callback bị xóa; verify no memory leak
+- [ ] `UnlockSocket()` → socket mới mở; tối đa 4 socket; giá lũy tiến theo `ShopPriceConfig`
+- [ ] Bắt đầu với 0 socket; `Embed` khi không có socket trống → thất bại
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -695,73 +686,37 @@ ___
 **AC:**
 
 - [ ] 6 state class implement `IState`: `InMapState`, `InCombatState`, `InShopState`, `InRestState`, `InEventState`, `InRewardState`
-- [ ] `InCombatState.Enter()` gọi `TurnManager.StartCombatAsync(ct)` bằng `UniTask.Void` (fire-and-forget, không block Tick)
-- [ ] `GameManager.BuildStateMachine()` setup đủ transitions: `NodeEnteredSO` → đúng state
-- [ ] `StateMachineManager.Tick()` check transition đúng, gọi `SetState` khi predicate thỏa
-- [ ] `AddAnyTransition` từ bất kỳ state → `InMapState` khi node exit
-- [ ] **Edit Mode Test**: mock predicate, verify state transition đúng
+- [ ] `InCombatState.Enter()` gọi `TurnManager.StartCombatAsync(ct).Forget()`
+- [ ] `BuildStateMachine()` setup đủ transitions; `Tick()` check và chuyển state đúng
+- [ ] **Edit Mode Test**: mock predicate, verify transition
 
 ---
 
-### TASK-091 — `GameManagerDriver` MonoBehaviour
+### TASK-091 — `GameManagerDriver` và `EventBridge` MonoBehaviours
 
-**Complexity:** S | **Depends:** TASK-090
-
-**AC:**
-
-- [ ] `GameManagerDriver : MonoBehaviour` tồn tại trong `Scripts/Unity/Core/`
-- [ ] `Awake()` tạo `GameManager`, gọi `BuildStateMachine()`
-- [ ] `Update()` gọi `_fsm.Tick()`
-- [ ] `FixedUpdate()` gọi `_fsm.FixedTick()`
-- [ ] `StartRun()` được gọi đúng chỗ khi game bắt đầu
-- [ ] **Play Mode Test**: verify Tick() được gọi mỗi frame
-
----
-
-### TASK-092 — `EventBridge` MonoBehaviours
-
-**Complexity:** S | **Depends:** TASK-010, TASK-060, TASK-091
-
-Tạo bridge adapter cho từng cross-boundary event.
+**Complexity:** S | **Depends:** TASK-090, TASK-010, TASK-060
 
 **AC:**
 
-- [ ] `CombatEndedBridge`: subscribe `TurnManager.OnCombatEnded` → raise `CombatEndedSO`; unsubscribe trong `OnDestroy()`
-- [ ] `NodeEnteredBridge`: `NodeRouter` phát C# event → raise `NodeEnteredSO`
-- [ ] `GoldChangedBridge`: `GoldLedger.OnBalanceChanged` → raise `GoldChangedSO`
-- [ ] Mỗi Bridge không chứa logic — chỉ relay
-- [ ] Verify: sau `OnDestroy()` của Bridge, SO không còn nhận event cũ
-- [ ] **Play Mode Test**: raise C# event → verify SO.RaiseEvent() được gọi đúng payload
+- [ ] `GameManagerDriver`: `Awake()` tạo GameManager + FSM; `Update()` gọi `Tick()`
+- [ ] `CombatEndedBridge`: relay `TurnManager.OnCombatEnded` → `CombatEndedSO.RaiseEvent()`; unsubscribe trong `OnDestroy()`
+- [ ] `NodeEnteredBridge`, `GoldChangedBridge`: relay tương tự; không chứa logic
+- [ ] **Play Mode Test**: raise C# event → verify SO.RaiseEvent() đúng payload
 
 ---
 
 ## Phase 9 — Meta Layer
 
-### TASK-100 — `GoldLedger`
+### TASK-100 — `GoldLedger`, `RewardSystem`, `ShopSystem`, `EventSystem`
 
-**Complexity:** S | **Depends:** TASK-001
-
-**AC:**
-
-- [ ] `Earn(100)` → `balance = 100`
-- [ ] `Spend(60)` khi đủ → `balance = 40`, return `true`
-- [ ] `Spend(60)` khi thiếu → không đổi, return `false`
-- [ ] `OnBalanceChanged` C# event phát sau mỗi Earn/Spend thành công
-- [ ] **Edit Mode Test pass**
-
----
-
-### TASK-101 — `RewardSystem`, `ShopSystem`, `EventSystem`
-
-**Complexity:** M | **Depends:** TASK-006, TASK-008, TASK-100
+**Complexity:** M | **Depends:** TASK-007, TASK-008
 
 **AC:**
 
-- [ ] `RewardSystem.GenerateOffer(Minion, Arc1)` → 1 Equipment + 1 Spell + 1 Rune; Rank phân bổ đúng xác suất (n=1000)
-- [ ] `ShopSystem.GenerateInventory(Arc1)` → 5 Equipment + 5 Spell + 5 Rune; Rank đúng tỷ lệ
-- [ ] `ShopSystem.TryPurchase()`: đủ tiền → GoldLedger.Spend(); thiếu tiền → `NotEnoughGold`
-- [ ] `EventSystem.InitArc()` → shuffle queue; không lặp Event trong Arc
-- [ ] `Force Trade` event → `GameManager.pendingCombatModifier` set đúng
+- [ ] `GoldLedger`: Earn/Spend đúng; `OnBalanceChanged` phát
+- [ ] `RewardSystem.GenerateOffer(Minion, Arc1)` → 1 Equipment + 1 Spell + 1 Rune; Rank đúng xác suất (n=1000)
+- [ ] `ShopSystem.GenerateInventory(Arc1)` → 5+5+5; `TryPurchase()` đúng
+- [ ] `EventSystem.InitArc()` → shuffle; không lặp trong Arc; `Force Trade` → `pendingCombatModifier` set đúng
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -774,12 +729,12 @@ Tạo bridge adapter cho từng cross-boundary event.
 
 **AC:**
 
-- [ ] `GenerateArc(arcConfig)` không throw exception với 100 random seed khác nhau
-- [ ] Tất cả path đến Boss đều thỏa ràng buộc Elite/Rest/Shop/Event tối thiểu — verify DFS/BFS
-- [ ] Mỗi Node có 1–3 cạnh ra, không Node bị cô lập
-- [ ] `NodeRouter`: Enter đúng node type → dispatch đúng handler
-- [ ] Enter node đã visited → bị chặn
-- [ ] **Edit Mode Test pass** (không cần visual)
+- [ ] `GenerateArc()` không throw với 100 seed khác nhau; tất cả path thỏa ràng buộc (DFS/BFS); mỗi Node 1–3 cạnh
+- [ ] Boss Node ngoài Node cuối cùng → là Optional Boss (cùng `NodeType.Boss`, phân biệt bằng vị trí trong graph)
+- [ ] Số Optional Boss trên toàn map theo ArcConfig (Arc 1: 1, Arc 2: 2, Arc 3: 3)
+- [ ] Không có 2 Node cùng loại liên tiếp trên cùng một path, trừ Combat Minion Node
+- [ ] `NodeRouter`: đúng node type → dispatch đúng handler; visited Node bị chặn
+- [ ] **Edit Mode Test pass**
 
 ---
 
@@ -791,55 +746,52 @@ Tạo bridge adapter cho từng cross-boundary event.
 
 **AC:**
 
-- [ ] `StartRun()` khởi tạo player 10 điểm mỗi attribute, inventory trống
-- [ ] `pendingCombatModifier` cleared sau combat kết thúc
-- [ ] `SaveSystem.Save()` tạo JSON đủ: `currentArc`, `mapSeed`, `visitedNodeIds[]`, `playerSnapshot`, `gold`, `pendingCombatModifier`
-- [ ] `SaveSystem.Load()` khôi phục đúng state; map giống hệt khi dùng cùng `mapSeed`
-- [ ] Save không xảy ra trong combat — `Assert.IsFalse(SaveSystem.isSaving)` khi TurnManager đang loop
+- [ ] `StartRun()` khởi tạo player đúng; `pendingCombatModifier` cleared sau combat
+- [ ] `Save()` tạo JSON đủ fields; `Load()` khôi phục đúng; map giống hệt theo `mapSeed`
+- [ ] Save không xảy ra trong combat
 - [ ] **Edit Mode Test pass**
 
 ---
 
 ## Phase 12 — UI Layer
 
-### TASK-130 — `PlayerStatusView`: HP/MP bar với DOTween
+### TASK-130 — `PlayerStatusView`, `EnemyStatusView`, `EffectView`
 
 **Complexity:** S | **Depends:** TASK-023, TASK-070
 
 **AC:**
 
-- [ ] HP bar animate bằng DOTween khi `OnHpChanged` event phát (không snap)
-- [ ] MP bar cập nhật khi `OnMpChanged` phát
-- [ ] View không reference trực tiếp `PlayerController` — chỉ subscribe C# event
-- [ ] `OnDestroy()` unsubscribe tất cả — verify invocation count về 0
+- [ ] HP/MP bar animate DOTween khi event phát; không reference trực tiếp Controller
+- [ ] `EffectView`: Apply Burn → icon xuất hiện; expire → biến mất; Neutralize → cả hai mất đồng thời
+- [ ] Tất cả View `OnDestroy()` unsubscribe — verify invocation count về 0
 - [ ] **Play Mode Test**
 
 ---
 
-### TASK-131 — `EffectView`, `SpellBarView`, `TurnIndicatorView`
+### TASK-131 — `SpellBarView` và `TurnIndicatorView`
 
-**Complexity:** M | **Depends:** TASK-032, TASK-041, TASK-060
+**Complexity:** M | **Depends:** TASK-041, TASK-060, TASK-044
 
 **AC:**
 
-- [ ] `EffectView`: Apply Burn → icon xuất hiện; expire → biến mất; Neutralize → cả hai mất đồng thời
-- [ ] `SpellBarView`: cooldown overlay đúng; ngoài Action Phase → button disable; tap → `SpellCaster.TryCast()` → `CastResult` → feedback DOTween (shake nếu fail)
-- [ ] `TurnIndicatorView`: subscribe `TurnManager.OnPhaseChanged` → cập nhật đúng
-- [ ] Tất cả View unsubscribe trong `OnDestroy()`
+- [ ] Cooldown overlay đúng; ngoài Action Phase → button disable
+- [ ] Tap spell → `SpellCaster.TryCast()` → `CastResult`:
+    - `Success` → spell animation bắt đầu
+    - `NotEnoughMp` → button shake DOTween
+    - `NoTargetSelected` → highlight target selection prompt
+- [ ] `TurnIndicatorView`: subscribe `OnPhaseChanged` → cập nhật đúng Player/Enemy, Start/Action/End
 - [ ] **Play Mode Test**
 
 ---
 
 ### TASK-132 — `MapGraphView` và `PendingModifierView`
 
-**Complexity:** M | **Depends:** TASK-110, TASK-092
+**Complexity:** M | **Depends:** TASK-110, TASK-091
 
 **AC:**
 
-- [ ] Node đúng icon theo type; visited → dim; chỉ node kề phía trước tap được
+- [ ] Node đúng icon; visited → dim; chỉ node kề phía trước tap được
 - [ ] `PendingModifierView`: subscribe `PendingModifierChangedSO` → xuất hiện/ẩn đúng
-- [ ] Tap node → `NodeRouter.EnterNode(nodeId)` gọi
-- [ ] `OnDestroy()` unsubscribe SO listener
 - [ ] **Play Mode Test**
 
 ---
@@ -852,55 +804,75 @@ Tạo bridge adapter cho từng cross-boundary event.
 
 **AC:**
 
-- [ ] Bắt đầu combat: SpellBar active, TurnIndicator "Player Turn"
-- [ ] Player cast Fireball → Minion nhận damage đúng số, DOTween shake animation, floating damage number
-- [ ] Enemy turn: enemy cast → Player nhận damage, animation chạy
-- [ ] Minion HP = 0 → DOTween death anim → Reward screen → `CombatEndedSO.RaiseEvent(Win)`
-- [ ] Player HP = 0 → Game Over, `CombatEndedSO.RaiseEvent(Lose)`
-- [ ] Không có null reference, không orphan tween sau combat kết thúc
+- [ ] Player cast Fireball: enemy nhận damage đúng, Burn icon xuất hiện, floating number animate
+- [ ] Enemy turn: cast, player nhận damage, animation chạy
+- [ ] Minion HP = 0 → death anim → Reward screen → `CombatEndedSO.RaiseEvent(Win)`
+- [ ] Player HP = 0 → `CombatEndedSO.RaiseEvent(Lose)`
+- [ ] Không có null reference, không orphan tween
 - [ ] **Manual test**
 
 ---
 
-### TASK-141 — Full combat loop: Element combos
+### TASK-141 — Full combat loop: Multi-target spells
 
 **Complexity:** M | **Depends:** TASK-140
 
+**AC — ColdBreathe (AllEnemies):**
+
+- [ ] Tất cả enemy nhận damage; mỗi enemy có dodge check độc lập; enemy dodge không abort spell
+
+**AC — Spark (SelectedEnemy + SecondaryRandom):**
+
+- [ ] Enemy A nhận full damage, Enemy B nhận 50%; B không có dodge check
+- [ ] Miss Enemy A → cả A và B đều không nhận damage
+
+**AC — CandleGhost (LowestHpEnemies + tieBreaker):**
+
+- [ ] 3 enemies với 2 bằng HP → tie-break đúng theo fire_res; chỉ có 2 enemy → 2 target, không error
+
+**AC — Bubble (Frozen trực tiếp):**
+
+- [ ] Enemy bị Frozen không cần Drenched+Chilled trước; lượt sau skip Action Phase
+    
+- [ ] **Manual test**
+    
+
+---
+
+### TASK-142 — Full combat loop: Element combos
+
+**Complexity:** M | **Depends:** TASK-141
+
 **AC:**
 
-- [ ] Burn + Dazed → Detonates: 30% maxHp instant, bypass armor — `ParallelCommand` VFX + number đồng thời
-- [ ] Refreshing + Fortified → Crystalize: lượt sau miễn damage
+- [ ] Burn + Dazed → Detonates: 30% maxHp, bypass armor, `ParallelCommand` VFX + number
+- [ ] Refreshing + Fortified → Crystalize: lượt sau miễn damage và debuff
 - [ ] Enrage + Energized → Overdrive: guaranteed hit, ×1.30 damage
-- [ ] Drenched + Chilled → Frozen: enemy skip Action Phase 1 lượt
+- [ ] Drenched + Chilled → Frozen: skip Action Phase
 - [ ] **Manual test**
 
 ---
 
-### TASK-142 — Full game flow: Map → Combat → Shop → Rest → Map
+### TASK-143 — Full game flow: Map → Combat → Shop → Rest → Map
 
-**Complexity:** L | **Depends:** TASK-140, TASK-132, TASK-101
+**Complexity:** L | **Depends:** TASK-140, TASK-132, TASK-100
 
 **AC:**
 
-- [ ] `GameManagerDriver.Tick()` chuyển state đúng theo event SO
-- [ ] Map → Minion Combat → Win → Reward → Map (node marked visited)
-- [ ] Map → Shop → mua item → Gold giảm → Map
-- [ ] Map → Rest → chọn attribute → RecalculateBaseAttributes() → Map
-- [ ] `PendingModifierView` xuất hiện sau Force Trade event, biến mất sau combat
-- [ ] Không có memory leak, không orphan UniTask, không orphan DOTween
+- [ ] GameManagerDriver chuyển state đúng theo event SO
+- [ ] Map → Combat → Win → Reward → Map; Map → Shop → mua → Gold giảm; Map → Rest → +1 attr
+- [ ] Không memory leak, không orphan UniTask, không orphan DOTween
 - [ ] **Manual test end-to-end**
 
 ---
 
-### TASK-143 — Save và Load giữa session
+### TASK-144 — Save và Load giữa session
 
-**Complexity:** M | **Depends:** TASK-142, TASK-120
+**Complexity:** M | **Depends:** TASK-143, TASK-120
 
 **AC:**
 
-- [ ] Thắng combat, Stop Play Mode (simulate quit)
-- [ ] Play lại → load đúng: Arc, map layout, inventory, gold
-- [ ] Không mất item đã nhận
+- [ ] Stop Play Mode sau combat, Play lại → load đúng Arc, map, inventory, gold
 - [ ] **Manual test**
 
 ---
@@ -911,5 +883,13 @@ Tạo bridge adapter cho từng cross-boundary event.
 - Phase 0–4 ưu tiên Edit Mode Test trước khi integrate vào scene
 - Task `[~]` chỉ một người nhận tại một thời điểm
 - **Không dùng `StartCoroutine` hoặc `IEnumerator`** trong bất kỳ code mới nào từ Phase 5 trở đi
-- **DOTween tween phải được `.Kill()` khi cancel** — không để orphan tween sau scene unload
+- **DOTween tween phải `.Kill()` khi cancel** — không để orphan tween
 - Khi task xong, cập nhật status và ghi ngày hoàn thành
+
+## Changelog
+
+|Version|Thay đổi|
+|---|---|
+|v3|TASK-001–005 mark done; TASK-006 rewrite cho typed SpellEffect system; TASK-007 rewrite với 12 Rank I asset schema; TASK-008 merge EnemyDefinition+Equipment+Rune; TASK-042 thêm `SpellCastContext` + `NoTargetSelected`; TASK-043 rewrite hit/dodge per resolver type; TASK-044 mới (typed effect execution); TASK-045 mới (end-to-end spell verify); TASK-141 mới (multi-target spell test)|
+|v2|Foundation Layer, UniTask, DOTween, EventChannelSO, StateMachine|
+|v1|Initial|
