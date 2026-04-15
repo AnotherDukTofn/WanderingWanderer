@@ -159,7 +159,13 @@ Scripts/
   │     │     ├── Spells/
   │     │     │     ├── SpellCaster.cs
   │     │     │     ├── SpellSlotManager.cs
-  │     │     │     └── CooldownTracker.cs
+  │     │     │     ├── CooldownTracker.cs
+  │     │     │     └── SpellEffects/            ← Logic thực thi (DamageEffect.cs, v.v.)
+  │     │     │           ├── SpellEffect.cs
+  │     │     │           ├── DamageEffect.cs
+  │     │     │           ├── HealEffect.cs
+  │     │     │           ├── ArmorEffect.cs
+  │     │     │           └── StatusEffect.cs
   │     │     ├── Passives/
   │     │     │     ├── EquipmentSystem.cs
   │     │     │     ├── RuneSystem.cs
@@ -169,6 +175,12 @@ Scripts/
   │     │     │     ├── RewardSystem.cs
   │     │     │     ├── ShopSystem.cs
   │     │     │     ├── EventSystem.cs
+  │     │     │     ├── EventActions/            ← Logic thực thi (GiveGoldAction.cs, v.v.)
+  │     │     │     │     ├── EventAction.cs
+  │     │     │     │     ├── GiveGoldAction.cs
+  │     │     │     │     ├── GiveAttributeAction.cs
+  │     │     │     │     ├── ForceCombatAction.cs
+  │     │     │     │     └── ...
   │     │     │     ├── RestNode.cs
   │     │     │     └── SaveSystem.cs
   │     │     ├── Map/
@@ -178,11 +190,9 @@ Scripts/
   │     │     │     ├── GameManager.cs
   │     │     │     └── TurnManager.cs
   │     │     └── Shared/
-  │     │           ├── Enums.cs             ← Element, EffectType, NodeType, Phase, CombatResult,
-  │     │           │                           StatType, ModType, TargetResolverType, TieBreaker...
-  │     │           ├── Structs.cs           ← StatModifier, PotencyRef, TargetResolver,
-  │     │           │                           CombatModifier, RewardOffer...
-  │     │           ├── Interfaces.cs        ← IEntity, IActionCommand...
+  │     │           ├── Enums/               ← Element.cs, EffectType.cs, etc.
+  │     │           ├── Structs/             ← StatModifier.cs, PotencyRef.cs, etc.
+  │     │           ├── Interfaces/          ← IEntity.cs, IActionCommand.cs, etc.
   │     │           └── Constants.cs         ← magic number tạm thời (nên chuyển sang SO)
   │     │
   │     └── Unity/                    ← MonoBehaviour, Unity-specific (Assembly: Unity)
@@ -749,6 +759,9 @@ Data/Config/Arc/                        → Arc config SO assets
 Data/Config/Combat/                     → CombatConfig, WisdomSlotConfig assets
 Data/Config/Progression/                → RewardRateConfig, ShopPriceConfig, EventConfig assets
 Data/Events/                            → EventChannelSO assets
+Scripts/Game/Logic/Shared/Interfaces/   → Mỗi Interface một file riêng
+Scripts/Game/Logic/Shared/Enums/        → Mỗi Enum một file riêng (nếu cần tách)
+Scripts/Game/Logic/Shared/Structs/      → Mỗi Struct một file riêng (nếu cần tách)
 Data/Spells/                            → Spell SO (theo Rank)
 Data/Enemies/                           → Enemy SO (theo loại)
 Data/Equipment/                         → Equipment SO (theo Rank)

@@ -1,8 +1,8 @@
 ___
 **Game:** Wandering Wanderer 
 **Author:** DukTofn 
-**Last Updated:** 12/04/2026 
-**Revision:** v3 — Architecture v6 (Typed SpellEffect system, PotencyRef, TargetResolver)
+**Last Updated:** 15/04/2026 
+**Revision:** v4 — Architecture v8 (AvailableAttributePoints system)
 ___
 
 # TDD — Task Manager
@@ -99,17 +99,17 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 
 **AC — `IEntity` interface:**
 
-- [ ] `IEntity` interface nằm trong `Logic` assembly: `CurrentHp`, `MaxHp`, `HasEffect(EffectType)`, `GetEffectivePotency(Element)`, `GetEffectiveResistance(Element)`, `GetEffectiveAGI()`
+- [x] `IEntity` interface nằm trong `Logic` assembly: `CurrentHp`, `MaxHp`, `HasEffect(EffectType)`, `GetEffectivePotency(Element)`, `GetEffectiveResistance(Element)`, `GetEffectiveAGI()`
 - [ ] Property mở rộng (`ArmorStack`, `EffectSystem`) bổ sung khi implement TASK-020, TASK-030
 
 **AC — `EffectType` enum:**
 
-- [ ] `EffectType` enum nằm trong `Logic` assembly, đủ value: `None, Burn, Drenched, Chilled, Dazed, Enrage, Refreshing, Fortified, Energized, Overdrive, Crystalize, Frozen, Regen, Distracted`
+- [x] `EffectType` enum nằm trong `Logic` assembly, đủ value: `None, Burn, Drenched, Chilled, Dazed, Enrage, Refreshing, Fortified, Energized, Overdrive, Crystalize, Frozen, Regen, Distracted`
 
 **AC — `CombatState` class:**
 
-- [ ] `CombatState` nằm trong `Logic` assembly: `{ IEntity Player, IEntity[] AliveEnemies }`
-- [ ] Tạo mới mỗi lượt, read-only snapshot
+- [x] `CombatState` nằm trong `Logic` assembly: `{ IEntity Player, IEntity[] AliveEnemies }`
+- [x] Tạo mới mỗi lượt, read-only snapshot
 
 **AC — `PotencyRef` struct:**
 
@@ -123,14 +123,14 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 - [x] `TieBreaker` enum: `None`, `LowestResistance`
 - [x] `TargetResolver` struct: `{ TargetResolveType type, int targetCount, TieBreaker tieBreaker, Element tieBreakerElement }`
 - [x] `[Serializable]` — serialize được
-- [ ] `TargetResolver.Resolve(SpellCastContext, CombatState) → IEntity[]`:
+- [x] `TargetResolver.Resolve(SpellCastContext, CombatState) → IEntity[]`:
     - `Caster` → `[ context.Caster ]`
     - `SelectedEnemy` → `[ context.SelectedEnemy ]`
     - `AllEnemies` → tất cả alive enemies
     - `RandomEnemies(n)` → n enemy ngẫu nhiên, không trùng
     - `LowestHpEnemies(n)` → n enemy HP thấp nhất; tie → sort theo resistance theo `tieBreakerElement`
     - `SecondaryRandom` → 1 enemy ngẫu nhiên **ngoại trừ** `context.SelectedEnemy`
-- [ ] **Edit Mode Test**:
+- [x] **Edit Mode Test**:
     - `AllEnemies` với 3 enemies → trả về cả 3
     - `RandomEnemies(2)` với 4 enemies → trả về đúng 2, không trùng
     - `LowestHpEnemies(2)` với tie → tie-break theo resistance đúng
@@ -138,8 +138,8 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 
 **AC — `SpellEffect` subtypes:**
 
-- [ ] Abstract `SpellEffect` base class: `{ TargetResolver targetResolver, SpellCondition? condition }`
-- [ ] 4 concrete subtype, đều `[Serializable]`:
+- [x] Abstract `SpellEffect` base class: `{ TargetResolver targetResolver, SpellCondition? condition }`
+- [x] 4 concrete subtype, đều `[Serializable]`:
     - `DamageEffect : SpellEffect { PotencyRef potencyRef }`
     - `HealEffect : SpellEffect { PotencyRef potencyRef }`
     - `ArmorEffect : SpellEffect { PotencyRef potencyRef, int duration }`
@@ -148,14 +148,14 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 
 **AC — `SpellCondition` subtypes:**
 
-- [ ] Abstract `SpellCondition` base class: `bool Evaluate(IEntity target, SpellCastContext context)`
-- [ ] 3 implementation: `TargetHasEffect { EffectType }`, `TargetHpBelow { float threshold }`, `CasterHasEffect { EffectType }`
-- [ ] **Edit Mode Test**: `TargetHasEffect(Burn).Evaluate(target)` đúng khi target có/không có Burn
+- [x] Abstract `SpellCondition` base class: `bool Evaluate(IEntity target, SpellCastContext context)`
+- [x] 3 implementation: `TargetHasEffect { EffectType }`, `TargetHpBelow { float threshold }`, `CasterHasEffect { EffectType }`
+- [x] **Edit Mode Test**: `TargetHasEffect(Burn).Evaluate(target)` đúng khi target có/không có Burn
 
 **AC — `SpellCastContext` class:**
 
-- [ ] `SpellCastContext { IEntity Caster, IEntity? SelectedEnemy, SpellDefinition Spell }`
-- [ ] `SelectedEnemy` có thể null (spell chỉ target Caster hoặc AllEnemies)
+- [x] `SpellCastContext { IEntity Caster, IEntity? SelectedEnemy, ISpellDefinition Spell }`
+- [x] `SelectedEnemy` có thể null (spell chỉ target Caster hoặc AllEnemies)
 
 ---
 
@@ -165,14 +165,14 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 
 **AC — SO Class:**
 
-- [ ] `SpellDefinition : ScriptableObject` có field: `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, `minWisdomToImprint`
-- [ ] `effects: SpellEffect[]` dùng `[SerializeReference]` — Inspector hiển thị dropdown chọn subtype (`DamageEffect`, `HealEffect`, `ArmorEffect`, `StatusEffect`)
-- [ ] Tạo thành công `SpellDefinition` với `DamageEffect` + `StatusEffect` trong Inspector, không serialize error
+- [x] `SpellDefinition : ScriptableObject` có field: `id`, `displayName`, `rank`, `element`, `baseCost`, `baseCooldown`, `minWisdomToImprint`
+- [x] `effects: SpellEffect[]` dùng `[SerializeReference]` — Inspector hiển thị dropdown chọn subtype (`DamageEffect`, `HealEffect`, `ArmorEffect`, `StatusEffect`)
+- [x] Tạo thành công `SpellDefinition` với `DamageEffect` + `StatusEffect` trong Inspector, không serialize error
 
 **AC — 12 asset Rank I:**
 
-- [ ] 12 file asset tại `Assets/Data/Spells/RankI/`, naming đúng: `SP_Fireball.asset`, `SP_Ignite.asset`...
-- [ ] Mỗi asset điền đúng theo bảng sau (coefficient `[TBD]` ghi placeholder):
+- [x] 12 file asset tại `Assets/Data/Spells/RankI/`, naming đúng: `SP_Fireball.asset`, `SP_Ignite.asset`...
+- [x] Mỗi asset điền đúng theo bảng sau (coefficient `[TBD]` ghi placeholder):
 
 |Asset|Effects|Ghi chú|
 |---|---|---|
@@ -189,7 +189,7 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 |`SP_Spark`|`DamageEffect(SelectedEnemy, Lightning, c)` + `DamageEffect(SecondaryRandom, Lightning, c×0.5)`|Hai DamageEffect riêng|
 |`SP_Pulse`|`DamageEffect(RandomEnemies n=3, Lightning, c)`||
 
-- [ ] Không asset nào có field bỏ trống không hợp lý (coefficient TBD OK, type phải đúng)
+- [x] Không asset nào có field bỏ trống không hợp lý (coefficient TBD OK, type phải đúng)
 
 ---
 
@@ -292,6 +292,10 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 - [ ] SPI = 10 → `storedMaxMp = 100`; `storedMpRecovery = BASE_MP_RECOVERY + 10`
 - [ ] `RecalculateBaseAttributes()` thứ tự đúng: collect → main attr → potency (L0+L1+L2) → resist → HP/MP → recovery
 - [ ] `maxHp` và `maxMp` alias đúng `storedMaxHp`/`storedMaxMp`
+- [ ] `availableAttributePoints` khởi tạo = 0; `SpendAttributePoint(POT)` → POT tăng 1, `availableAttributePoints` giảm 1, `RecalculateBaseAttributes()` tự gọi
+- [ ] `SpendAttributePoint()` khi `availableAttributePoints == 0` → return false, không thay đổi
+- [ ] `SpendAttributePoint()` với stat không phải Main Attribute (VD: `FirePot`) → return false
+- [ ] `HasAvailablePoints()` trả đúng theo `availableAttributePoints`
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -717,6 +721,7 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 - [ ] `RewardSystem.GenerateOffer(Minion, Arc1)` → 1 Equipment + 1 Spell + 1 Rune; Rank đúng xác suất (n=1000)
 - [ ] `ShopSystem.GenerateInventory(Arc1)` → 5+5+5; `TryPurchase()` đúng
 - [ ] `EventSystem.InitArc()` → shuffle; không lặp trong Arc; `Force Trade` → `pendingCombatModifier` set đúng
+- [ ] `GiveAttributeAction { amount: 3 }` → `player.availableAttributePoints += 3`; không gọi `RecalculateBaseAttributes()` ngay
 - [ ] **Edit Mode Test pass**
 
 ---
@@ -860,7 +865,9 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 **AC:**
 
 - [ ] GameManagerDriver chuyển state đúng theo event SO
-- [ ] Map → Combat → Win → Reward → Map; Map → Shop → mua → Gold giảm; Map → Rest → +1 attr
+- [ ] Map → Combat → Win → Reward → Map; Map → Shop → mua → Gold giảm; Map → Rest → `availableAttributePoints += 1` → `AttributeAllocationView` hiển → player phân bổ → stat tăng
+- [ ] Map → Event (Ancient Shrine) → `availableAttributePoints += 1` → allocation → đúng
+- [ ] Map → Event (Cursed Altar, Accept) → HP giảm + `availableAttributePoints += 3` → allocation 3 điểm
 - [ ] Không memory leak, không orphan UniTask, không orphan DOTween
 - [ ] **Manual test end-to-end**
 
@@ -890,6 +897,7 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 
 |Version|Thay đổi|
 |---|---|
+|v4|Thêm AC cho `availableAttributePoints` và `SpendAttributePoint()` trong TASK-023; TASK-100 thêm AC verify `GiveAttributeAction` cộng `availableAttributePoints`; TASK-143 thêm AC cho Rest và Event attribute allocation flow|
 |v3|TASK-001–005 mark done; TASK-006 rewrite cho typed SpellEffect system; TASK-007 rewrite với 12 Rank I asset schema; TASK-008 merge EnemyDefinition+Equipment+Rune; TASK-042 thêm `SpellCastContext` + `NoTargetSelected`; TASK-043 rewrite hit/dodge per resolver type; TASK-044 mới (typed effect execution); TASK-045 mới (end-to-end spell verify); TASK-141 mới (multi-target spell test)|
 |v2|Foundation Layer, UniTask, DOTween, EventChannelSO, StateMachine|
 |v1|Initial|

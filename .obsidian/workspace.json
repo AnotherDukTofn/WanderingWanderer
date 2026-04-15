@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TDD/TDD - DETAILED_ARCHITECTURE.md",
+                "file": "TDD/TASK_MANAGER.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TDD - DETAILED_ARCHITECTURE"
+              "title": "TASK_MANAGER"
             }
           }
         ]
@@ -186,18 +186,19 @@
   },
   "active": "85e148073df6926f",
   "lastOpenFiles": [
-    "TDD/TASK_MANAGER.md",
-    "Wandering Wanderer - Project/Library/ProtocolInstance.json",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotqjblk7se.42n",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotc6q39jv2.h0g",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotjplrrei2.qb7",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotsc9f87nh.ggg",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotntivtd3k.znp",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotfz7jpew4.eyn",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aotwpv9hj45.6qt",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aot7ffdwa7n.ojw",
-    "Wandering Wanderer - Project/Temp/Burst/burst-aot9e2mxnbc.d5c",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Logic/Spells/SpellConditions/TargetHpBelow.cs.meta",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Logic/Shared/Interfaces/IDecisionPolicy.cs",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Logic/Shared/Enums/EnemyEnums.cs",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Logic/Shared/Enums/ItemEnums.cs",
+    "Wandering Wanderer - Project/Assets/Scripts/Editor/SpellDataGenerator.cs",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Unity/Data/Definitions/SpellDefinitionSO.cs",
+    "Wandering Wanderer - Project/Assets/Scripts/Game/Unity/Data/Definitions",
+    "Wandering Wanderer - Project/Temp/Bin/Debug/Test.EditMode",
+    "Wandering Wanderer - Project/Temp/Bin/Debug/Logic",
+    "Wandering Wanderer - Project/Temp/Bin/Debug",
+    "Wandering Wanderer - Project/Temp/Bin",
     "TDD/TDD - DETAILED_ARCHITECTURE.md",
+    "TDD/TASK_MANAGER.md",
     "TDD/TDD - NAMING_CONVENTION.md",
     "GDD/GDD - Progression Design.md",
     "GDD/GDD - Combat Design.md",

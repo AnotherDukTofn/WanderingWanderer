@@ -1,9 +1,20 @@
 ___
  **Game:** Wandering Wanderer 
  **Author:** DukTofn 
- **Last Updated:** 14/04/2026 
+ **Last Updated:** 15/04/2026 
  ___
 ## Changelog
+
+### v8
+
+|Điểm|Thay đổi|
+|---|---|
+|Thêm `AvailableAttributePoints` system|Tách biệt "earn" và "spend" attribute point — `RestNode` và `GiveAttributeAction` chỉ cộng `availableAttributePoints`, player phân bổ tại `AttributeAllocationView`|
+|Sửa `PlayerController`|Thêm `availableAttributePoints: int`, `SpendAttributePoint(statType)`, `HasAvailablePoints()`|
+|Sửa `GiveAttributeAction`|Bỏ `playerChooses: bool` — luôn cộng vào `availableAttributePoints`, player luôn chọn|
+|Sửa `RestNode`|Đổi từ trực tiếp `AddAttribute()` → `availableAttributePoints += 1`|
+|Sửa `EventSystem.ResolveEvent`|`GiveAttributeAction` chỉ cần `+= amount`, không cần `choice.attributeType`|
+|Sửa `EventChoice`|Bỏ `attributeType` — không còn cần thiết|
 
 ### v7
 
@@ -1123,6 +1134,11 @@ PlayerController {
     // Main Attributes — tổng sau khi cộng Flat modifier từ equipment/rune
     POT, SPI, WIS, VIT, AGI : int
 
+    // Attribute Point Pool — điểm chưa phân bổ
+    availableAttributePoints : int   // số điểm có thể cộng vào Main Attribute
+    // Earn: RestNode (+1), GiveAttributeAction (+N)
+    // Spend: player chọn attribute → SpendAttributePoint(statType)
+
     // Stored values — kết quả của Layer 0 + Layer 1 + Layer 2
     // Chỉ recalculate khi equip/unequip/embed/purge, KHÔNG recalculate trong combat
     storedFirePotency, storedWaterPotency, storedIcePotency, storedLightningPotency : float
@@ -1143,6 +1159,19 @@ PlayerController {
     spellSlots     : SpellSlotManager
     equippedItems  : Equipment[5]
     embeddedRunes  : Rune[4]
+
+    // --- Methods ---
+
+    HasAvailablePoints() → bool:
+        return availableAttributePoints > 0
+
+    SpendAttributePoint(statType: StatType) → bool:
+        if availableAttributePoints <= 0: return false
+        if statType not in {POT, SPI, WIS, VIT, AGI}: return false
+        mainAttributes[statType] += 1
+        availableAttributePoints -= 1
+        RecalculateBaseAttributes()
+        return true
 }
 ```
 
@@ -1793,9 +1822,8 @@ EventSystem.ResolveEvent(choice: EventChoice):
             GoldLedger.Earn(amount)
 
         GiveAttributeAction:
-            // choice.attributeType do UI truyền vào
-            player.AddAttribute(choice.attributeType, action.amount)
-            PlayerController.RecalculateBaseAttributes()
+            player.availableAttributePoints += action.amount
+            // UI (AttributeAllocationView) sẽ hiển thị khi HasAvailablePoints()
 
         GiveRandomItemAction:
             item = ItemPool.SampleOne(action.itemType, action.rank)
@@ -1834,7 +1862,7 @@ EventSystem.ResolveEvent(choice: EventChoice):
 
 > **Lưu ý `ForceCombatAction` và `OpenMiniShopAction`:** Hai action này chuyển scene (combat hoặc shop) nên `return` sớm — các action còn lại (nếu có) không được thực thi. GD khi thiết kế event nên đặt các action này cuối danh sách.
 
-> **`EventChoice`** là input từ UI: `{ accepted: bool, attributeType: StatType? }`. `attributeType` chỉ cần khi event có `GiveAttributeAction` với `playerChooses == true`.
+> **`EventChoice`** là input từ UI: `{ accepted: bool }`. Không cần `attributeType` — attribute point cộng vào `availableAttributePoints`, player phân bổ qua `AttributeAllocationView` riêng.
 
 **Event combat modifier flow:**
 
@@ -1865,8 +1893,8 @@ Khi vào CombatScene:
 Khi player chọn Rest Node:
 
 1. `player.currentHp = player.maxHp`
-2. Player chọn +1 điểm vào Main Attribute tùy ý
-3. `PlayerController.RecalculateBaseAttributes()`
+2. `player.availableAttributePoints += 1`
+3. UI hiển thị `AttributeAllocationView` — player phân bổ điểm → `SpendAttributePoint(statType)`
 
 ---
 
@@ -2303,8 +2331,6 @@ Rune_Combustion:
 
 ### `EventDefinitions` _(Thêm mới v7)_
 
----
-
 #### Vấn đề trước v7
 
 GDD — Progression Design liệt kê 10 event với mô tả text, nhưng không có data schema. Mỗi event có hiệu ứng hoàn toàn khác nhau (cho Gold, bắt combat, thay đổi attribute, mở mini-shop, áp combat modifier) — không thể gom vào 1 struct đơn giản.
@@ -2339,10 +2365,9 @@ class GiveGoldAction : EventAction {
     maxAmount : int
 }
 
-// 2. Cho điểm Main Attribute
+// 2. Cho điểm Main Attribute (cộng vào availableAttributePoints)
 class GiveAttributeAction : EventAction {
-    amount        : int     // số điểm cộng
-    playerChooses : bool    // true → player chọn attribute nào; false → random
+    amount : int   // số điểm cộng vào availableAttributePoints
 }
 
 // 3. Cho item ngẫu nhiên
@@ -2442,7 +2467,7 @@ Windfall:
 AncientShrine:
   category: Positive
   actions: [
-    GiveAttributeAction { amount: 1, playerChooses: true }
+    GiveAttributeAction { amount: 1 }
   ]
 ```
 
@@ -2470,7 +2495,7 @@ CursedAltar:
   category: TradeOff
   actions: [
     TakeHpPercentAction    { percent: [TBD] },
-    GiveAttributeAction    { amount: 3, playerChooses: true }
+    GiveAttributeAction    { amount: 3 }
   ]
 ```
 
@@ -2736,6 +2761,8 @@ ShopSystem.PurgeRune(runeIndex)
 |**Meta / Save / Event**||
 |`SaveSystem` chỉ save tại Node boundary|Không save mid-combat — tránh phức tạp và exploit|
 |`GoldLedger` là single source of truth|Không có gì khác modify gold trực tiếp|
+|`availableAttributePoints` tách earn/spend|RestNode và GiveAttributeAction chỉ `+= N`; player phân bổ qua `SpendAttributePoint()` + `AttributeAllocationView`|
+|`GiveAttributeAction` chỉ có `amount`|Bỏ `playerChooses` — player luôn chọn attribute, flow thống nhất|
 |`EventAction` là typed subtypes|`[SerializeReference]` — giống pattern SpellEffect, 8 subtypes|
 |`EventCategory` phân loại event|`TradeOff` → player accept/decline; `Positive`/`Negative` → auto-resolve|
 |`ForceCombatAction` và `OpenMiniShopAction` return sớm|Chuyển scene → các action sau trong list không fire|

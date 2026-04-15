@@ -12,3 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff316b5e310485f4dbd2d86b94d867a1, type: 3}
   m_Name: WisdomSlotConfig
   m_EditorClassIdentifier: Unity::WisdomSlotConfigSO
+  WisdomEnlightenThreshold:
+    Slot1: 0
+    Slot2: 10
+    Slot3: 18
+    Slot4: 36
+    Slot5: 60
