@@ -1,7 +1,5 @@
 using NUnit.Framework;
 using UnityEditor;
-using UnityEngine;
-using Unity.Data;
 using Game.Unity.Data;
 
 namespace Game.Tests.EditMode.Meta

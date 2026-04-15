@@ -1,9 +1,8 @@
 using System;
 using UnityEngine;
-using Game.Logic.Spells.SpellConditions;
-using Game.Logic.Shared.Structs;
+using Game.Logic.Shared;
 
-namespace Game.Logic.Spells.SpellEffects
+namespace Game.Logic.Spells
 {
     [Serializable]
     public abstract class SpellEffect

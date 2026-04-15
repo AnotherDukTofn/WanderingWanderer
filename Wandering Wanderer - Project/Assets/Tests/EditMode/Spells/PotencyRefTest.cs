@@ -1,6 +1,5 @@
 ﻿using Game.Logic.Shared;
 using NUnit.Framework;
-using Game.Logic.Shared.Structs;
 
 namespace Tests.EditMode.Spells
 {

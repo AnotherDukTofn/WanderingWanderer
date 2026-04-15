@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Project Path="Logic.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="Foundation.csproj" />
+  <Project Path="Test.EditMode.csproj" />
+  <Project Path="Unity.csproj" />
+  <Project Path="Tests.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+</Solution>

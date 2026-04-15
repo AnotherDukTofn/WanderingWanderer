@@ -1,7 +1,5 @@
 using NUnit.Framework;
-using System.Linq;
 using Game.Logic.Shared;
-using Game.Logic.Shared.Structs;
 using Game.Logic.Combat;
 using Game.Logic.Spells;
 using Tests.EditMode.Stubs;

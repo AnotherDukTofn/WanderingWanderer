@@ -30,4 +30,15 @@ namespace Game.Logic.Shared
         II = 2,
         III = 3
     }
+
+    public enum ConditionType
+    {
+        Always,
+        PlayerHpBelow50,
+        PlayerHpBelow25,
+        PlayerHasEffect,  
+        SelfHpBelow50,
+        SelfHpBelow25,
+        SelfHasEffect,
+    }
 }

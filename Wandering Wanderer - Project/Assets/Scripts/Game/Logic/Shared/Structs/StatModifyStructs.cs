@@ -1,7 +1,6 @@
 using System;
-using Game.Logic.Shared.Enums;
 
-namespace Game.Logic.Shared.Structs
+namespace Game.Logic.Shared
 {
     [Serializable]
     public struct StatModifier

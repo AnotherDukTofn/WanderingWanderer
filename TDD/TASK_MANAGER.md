@@ -144,7 +144,7 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
     - `HealEffect : SpellEffect { PotencyRef potencyRef }`
     - `ArmorEffect : SpellEffect { PotencyRef potencyRef, int duration }`
     - `StatusEffect : SpellEffect { EffectType effectType }`
-- [ ] `[SerializeReference]` trên field `SpellEffect[]` trong `SpellDefinition` — Inspector cho phép chọn subtype cụ thể
+- [x] `[SerializeReference]` trên field `SpellEffect[]` trong `SpellDefinition` — Inspector cho phép chọn subtype cụ thể
 
 **AC — `SpellCondition` subtypes:**
 
@@ -200,7 +200,8 @@ Implement toàn bộ hệ thống data type cho spell trong `Logic` assembly. Kh
 **AC:**
 
 - [ ] `EnemyDefinition` ScriptableObject có đủ field theo Architecture doc; `decisionPolicyConfig` serialize bằng `[SerializeReference]`
-- [ ] Tạo `EN_TestMinion` — `RandomPolicy`, gán `SP_Fireball` — không bị serialize error
+- [ ] `spells: SpellDefinition[]` (direct reference, không string ID)
+- [ ] Tạo `EN_TestMinion` — `RandomPolicy`, gán `SP_Fireball` asset vào `spells` array — không bị serialize error
 - [ ] `EquipmentDefinition` có field: `id`, `displayName`, `slot` (`EquipmentSlot` enum), `rank`, `modifiers: StatModifier[]`
 - [ ] `RuneDefinition` có field: `id`, `displayName`, `rank`, `passiveType`, `statModifiers: StatModifier[]`, `passiveConfig` (`[SerializeReference]`)
 - [ ] Tạo `EQ_FlameWand_R1` (1 flat POT), `EQ_IronRobe_R2` (flat VIT + flat MaxHp) — không serialize error

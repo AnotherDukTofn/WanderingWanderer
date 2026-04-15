@@ -1,7 +1,7 @@
 using System;
-using Game.Logic.Shared.Structs;
+using Game.Logic.Shared;
 
-namespace Game.Logic.Spells.SpellEffects
+namespace Game.Logic.Spells
 {
     [Serializable]
     public class HealEffect : SpellEffect

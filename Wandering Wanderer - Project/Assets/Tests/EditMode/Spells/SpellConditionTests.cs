@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using Game.Logic.Spells;
-using Game.Logic.Spells.SpellConditions;
 using Game.Logic.Shared;
 using Tests.EditMode.Stubs;
 

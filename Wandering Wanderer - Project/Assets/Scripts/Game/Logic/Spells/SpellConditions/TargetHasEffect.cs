@@ -1,7 +1,7 @@
 using System;
 using Game.Logic.Shared;
 
-namespace Game.Logic.Spells.SpellConditions
+namespace Game.Logic.Spells
 {
     [Serializable]
     public class TargetHasEffect : SpellCondition

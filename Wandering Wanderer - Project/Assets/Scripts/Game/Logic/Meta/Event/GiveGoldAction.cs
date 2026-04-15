@@ -1,4 +1,4 @@
-﻿namespace Game.Logic.Meta.Event
+﻿namespace Game.Logic.Meta
 {
     public class GiveGoldAction
     {

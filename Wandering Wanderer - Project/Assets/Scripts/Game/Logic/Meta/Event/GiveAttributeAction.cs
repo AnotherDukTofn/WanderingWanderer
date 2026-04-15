@@ -1,4 +1,4 @@
-namespace Game.Logic.Meta.Event
+namespace Game.Logic.Meta
 {
     /// <summary>
     /// Cộng điểm vào availableAttributePoints.

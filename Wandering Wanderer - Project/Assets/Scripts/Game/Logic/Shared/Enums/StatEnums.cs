@@ -1,4 +1,4 @@
-namespace Game.Logic.Shared.Enums
+namespace Game.Logic.Shared
 {
     public enum StatType
     {

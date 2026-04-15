@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Unity.Data
+namespace Game.Unity.Data
 {
     [CreateAssetMenu(fileName = "ArcConfig", menuName = "SO/Arc Config")]
     public class ArcConfigSO : ScriptableObject

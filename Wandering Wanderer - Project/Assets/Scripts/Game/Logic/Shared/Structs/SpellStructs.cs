@@ -3,7 +3,7 @@ using System.Linq;
 using Game.Logic.Combat;
 using Game.Logic.Spells;
 
-namespace Game.Logic.Shared.Structs
+namespace Game.Logic.Shared
 {
     [Serializable]
     public struct TargetResolver

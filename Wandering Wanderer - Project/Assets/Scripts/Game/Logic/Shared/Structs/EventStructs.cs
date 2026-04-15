@@ -1,6 +1,4 @@
-using Game.Logic.Shared.Enums;
-
-namespace Game.Logic.Shared.Structs
+namespace Game.Logic.Shared
 {
     public struct EventDefinition
     {

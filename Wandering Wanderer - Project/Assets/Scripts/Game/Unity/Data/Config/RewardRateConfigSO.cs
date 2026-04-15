@@ -3,7 +3,7 @@ using System;
 
 namespace Game.Unity.Data
 {
-    [Serializable]
+    [System.Serializable]
     public struct RewardRankRate
     {
         public float Rank1;

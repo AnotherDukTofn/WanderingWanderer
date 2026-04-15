@@ -1,9 +1,8 @@
 using UnityEngine;
 using UnityEditor;
-using Game.Unity.Data.Definitions;
-using Game.Logic.Shared.Structs;
+using Game.Unity.Data;
 using Game.Logic.Shared;
-using Game.Logic.Spells.SpellEffects;
+using Game.Logic.Spells;
 
 public class SpellDataGenerator
 {

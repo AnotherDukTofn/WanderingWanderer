@@ -1302,8 +1302,8 @@ CombatContext {
     selfActiveEffects   : EffectType[]
 
     // Thông tin spell
-    availableSpells     : SpellID[]    // sau khi SpellSelector lọc
-    spellCooldowns      : Dictionary<SpellID, int>
+    availableSpells     : SpellDefinition[]    // sau khi SpellSelector lọc — direct reference
+    spellCooldowns      : Dictionary<SpellDefinition, int>
 
     // Thông tin combat
     roundNumber         : int
@@ -1317,10 +1317,10 @@ CombatContext {
 **Điều kiện lọc:**
 
 ```
-SpellSelector.GetAvailableSpells(enemy, context) → SpellID[]:
-    return enemy.spells.Where(spell =>
-        spell.cooldown == 0
-    )
+SpellSelector.GetAvailableSpells(enemy, context) → SpellDefinition[]:
+    return enemy.definition.spells.Where(spell =>
+        context.spellCooldowns[spell] == 0
+    ).ToArray()
 ```
 
 > Lưu ý: Enemy không có MP — không cần kiểm tra mana cost. Nếu thiết kế sau này thêm MP cho enemy thì bổ sung điều kiện này vào đây.
@@ -1330,8 +1330,8 @@ SpellSelector.GetAvailableSpells(enemy, context) → SpellID[]:
 Interface mà mọi AI policy phải implement:
 
 ```
-interface DecisionPolicy {
-    SelectSpell(available: SpellID[], context: CombatContext) → SpellID
+interface IDecisionPolicy {
+    SelectSpell(available: SpellDefinition[], context: CombatContext) → SpellDefinition
 }
 ```
 
@@ -1348,7 +1348,7 @@ SelectSpell(available, context):
 
 ```
 WeightedRandomPolicy {
-    weights: Dictionary<SpellID, float>  // cấu hình trong EnemyDefinition
+    weights: Dictionary<SpellDefinition, float>  // cấu hình trong EnemyDefinition
 }
 
 SelectSpell(available, context):
@@ -1364,15 +1364,15 @@ PriorityPolicy {
 }
 
 PriorityRule {
-    spellId   : SpellID
+    spell     : SpellDefinition
     condition : Condition   // xem bảng Condition bên dưới
     priority  : int
 }
 
 SelectSpell(available, context):
     for each rule in rules (theo priority giảm dần):
-        if rule.spellId in available AND rule.condition.Evaluate(context):
-            return rule.spellId
+        if rule.spell in available AND rule.condition.Evaluate(context):
+            return rule.spell
     return available[Random]  // fallback nếu không có rule nào thỏa
 ```
 
@@ -1394,11 +1394,11 @@ SelectSpell(available, context):
 
 ```
 rules:
-  [priority=10] SpellID=Lightning_Shock,  condition=PlayerHas(Burn)
+  [priority=10] spell=SP_Shock,     condition=PlayerHas(Burn)
     // Cố ý trigger Detonates khi player đang bị Burn
-  [priority=5]  SpellID=Fire_Fireball,    condition=PlayerLacks(Burn)
+  [priority=5]  spell=SP_Fireball,  condition=PlayerLacks(Burn)
     // Apply Burn nếu player chưa bị
-  [priority=1]  SpellID=Lightning_Shock,  condition=Always
+  [priority=1]  spell=SP_Shock,     condition=Always
     // Fallback
 ```
 
@@ -1406,7 +1406,7 @@ rules:
 
 ```
 ScriptedPolicy {
-    sequence: SpellID[]  // cấu hình trong EnemyDefinition
+    sequence: SpellDefinition[]  // cấu hình trong EnemyDefinition
     currentIndex: int    // runtime, reset khi combat bắt đầu
 }
 
@@ -1951,8 +1951,6 @@ EnemyDefinition {
 ---
 
 ### `SpellDefinitions` _(Thiết kế lại v6)_
-
----
 
 #### Vấn đề với thiết kế cũ
 
